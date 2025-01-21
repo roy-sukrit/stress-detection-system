@@ -1,0 +1,6 @@
+tasks/__pycache__
+tasks/gaze_tracking
+venv
+style.css
+testng.html
+.DS_Store
