@@ -1,7 +1,7 @@
 
 # Stress Detection System 🧑🏻‍💻
 
-This project combines gaze tracking using a webcam and a time-constrained task to assess cognitive behaviors and stress levels. It utilizes OpenCV for gaze tracking, Streamlit for the web interface, and logging for data collection and analysis.
+This project combines gaze tracking using a webcam and different types of tasks to assess cognitive behaviors and stress levels. It utilizes OpenCV for gaze tracking, Streamlit for the web interface, and logging for data collection and analysis.
 
 ---
 
@@ -28,9 +28,8 @@ Ensure you have the following installed:
    1. Install required Python dependencies:
      pip install -r requirements.txt
 
-   2. Download the Haarcascade files for face and eye detection:
-	 •haarcascade_frontalface_default.xml
-     •haarcascade_eye.xml
+   2. Download : shape_predictor_68_face_landmarks.dat file in tasks/
+
    3. Create Virtual Env:
       python -m venv venv  
       source venv/bin/activate  	
