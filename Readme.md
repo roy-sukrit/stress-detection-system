@@ -21,6 +21,7 @@ This project combines gaze tracking using a webcam and different types of tasks 
 Ensure you have the following installed:
 - Python 3.7 or higher
 - Pip (Python package manager)
+- <a link='http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2'>shape_predictor_68_face_landmarks.dat </a>
 
 ### Installation Steps
 1. Clone this repository:
@@ -28,14 +29,11 @@ Ensure you have the following installed:
    1. Install required Python dependencies:
      pip install -r requirements.txt
 
-   2. Download : shape_predictor_68_face_landmarks.dat file in tasks/
+   2. Download :shape_predictor_68_face_landmarks.dat in tasks/
 
-   3. Create Virtual Env:
+   3. Setup a Virtual Env:
       python -m venv venv  
-      source venv/bin/activate  	
-
-Place them in the project directory or specify their paths in the code.
-
+      source venv/bin/activate  
 🚀 Usage
 
 	1.Run the Time-Constrained Task:
@@ -50,10 +48,10 @@ Place them in the project directory or specify their paths in the code.
 
 gaze-tracking-time-task/
 ├── data                        -> Directory to store logs 
-├── tasks / time_constraint.py    -> Time-constrained task script
-├── app.py  ->  Streamlit App Entry Point 
+├── tasks / time_constraint.py    -> Time-constrained script
+├── app.py->  Streamlit App Entry Point 
 ├── requirements.txt         -> Python dependencies
-└── README.md                -> Project documentation
+└── README.md-> Project documentation
 
 📊 Output
 
@@ -67,12 +65,9 @@ Gaze tracking logs and task performance data are saved in the data directory:
 
 Contributions are welcome! Feel free to open issues or submit pull requests.
 
-🤝 License
-
-This project is licensed under the MIT License. See LICENSE for more information.
-
-
 🌟 Acknowledgments
 	•	OpenCV for image processing
 	•	Streamlit for interactive interfaces
 
+🤝 License
+This project is licensed under the MIT License. See LICENSE for more information.
