@@ -110,11 +110,6 @@ def report_writing_task():
 # Task 3: Python Program Task
 # Task 3: Python Program Task
 def python_program_task():
-    import time
-    import subprocess
-    import streamlit as st
-    from streamlit_ace import st_ace
-
     task_name = "Task 3 : Write a Python Program"
     task_description = """
     Write a program to calculate the factorial of a number. Define a function named `factorial(n)` that:
@@ -122,13 +117,6 @@ def python_program_task():
     - The factorial of 0 is defined as 1.
     - Complete the code below.
     """
-    
-    # Add visual warning for only 1 attempt allowed
-    st.markdown(
-        "<h3 style='color:red;'>❗<b>Only 1 attempt is allowed!</b> ❗</h3>", 
-        unsafe_allow_html=True
-    )
-
     default_code = """
 def factorial(n: int) -> int:
     if n == 0:
@@ -140,25 +128,18 @@ def factorial(n: int) -> int:
 print(factorial(5))  # Expected: 120
 print(factorial(0))  # Expected: 1
     """
-
+    
     # Display the task instructions
     st.subheader(f"{task_name}")
     st.write(task_description)
+    st.markdown("<h3 style='color:red;'>❗<b>Only 1 attempt is allowed!</b> ❗</h3>", unsafe_allow_html=True)
 
-    # Preserve code editor state across reruns
     if "code_editor" not in st.session_state:
         st.session_state.code_editor = default_code
 
-    code = st_ace(
-        language="python",
-        theme="monokai",
-        font_size=14,
-        value=st.session_state.code_editor,
-        key="editor",
-    )
+    code = st_ace(language="python", theme="monokai", font_size=14, value=st.session_state.code_editor, key="editor")
     st.session_state.code_editor = code
 
-    # Timer state management
     task_key = f"{task_name}_task"
     timer_key = f"{task_name}_timer"
     remaining_time_key = f"{task_name}_remaining_time"
@@ -177,19 +158,17 @@ print(factorial(0))  # Expected: 1
         st.session_state[remaining_time_key] = time_limit
         st.session_state.timer_placeholder = st.empty()
 
-    # Run Code button (independent of the timer)
+    # Run Code button
     if st.button("Run Code"):
         try:
-            # Save the code to a temporary Python file
-            with open("temp_code.py", "w") as f:
+            timestamp = datetime.datetime.now().strftime("%B %d, %Y - %I:%M %p")
+            file_path = f"temp_code_{timestamp}.py"
+            with open(file_path, "w") as f:
                 f.write(code)
 
             # Run the code and capture the output
-            result = subprocess.run(
-                ["python", "temp_code.py"], capture_output=True, text=True
-            )
+            result = subprocess.run(["python", file_path], capture_output=True, text=True)
 
-            # Display the output
             st.subheader("Output:")
             if result.stdout:
                 st.text(result.stdout)
@@ -197,19 +176,13 @@ print(factorial(0))  # Expected: 1
                 st.error(result.stderr)
 
             # Evaluate test cases
-            outputs = [
-                int(line.strip())
-                for line in result.stdout.strip().split("\n")
-                if line.strip().isdigit()
-            ]
+            outputs = [int(line.strip()) for line in result.stdout.strip().split("\n") if line.strip().isdigit()]
             expected_outputs = [120, 1]
 
             if outputs == expected_outputs:
                 st.success("Test Cases Passed!")
             else:
-                st.warning(
-                    f"Test Cases Failed.\nExpected: {expected_outputs}\nGot: {outputs}"
-                )
+                st.warning(f"Test Cases Failed.\nExpected: {expected_outputs}\nGot: {outputs}")
 
         except Exception as e:
             st.error(f"Error: {e}")
@@ -217,7 +190,7 @@ print(factorial(0))  # Expected: 1
     # Timer logic
     if st.session_state[task_key]:
         if st.session_state.timer_placeholder is None:
-            st.session_state.timer_placeholder = st.empty()  # Create placeholder once
+            st.session_state.timer_placeholder = st.empty()
 
         current_time = time.time()
         elapsed_time = current_time - st.session_state[timer_key]
@@ -225,18 +198,45 @@ print(factorial(0))  # Expected: 1
         st.session_state[remaining_time_key] = remaining_time
 
         if remaining_time > 0:
-            # Update the timer
-            st.session_state.timer_placeholder.info(
-                f"⏳ Time Remaining: {remaining_time} seconds"
-            )
-            time.sleep(1)
-            st.rerun()  # Re-run the app to update the timer
+            st.session_state.timer_placeholder.info(f"⏳ Time Remaining: {remaining_time} seconds")
+            time.sleep(1)  # Delay to refresh
         else:
-            # Time's up, stop the task and show a message
             st.session_state.timer_placeholder.warning("⏰ Time's up!")
             st.balloons()
             st.session_state[task_key] = False
             st.session_state.timer_placeholder = None  # Clear the placeholder
+
+# Stress Level Feedback
+def collect_feedback():
+    st.subheader("Stress Level Feedback")
+
+    st.write("How did you feel after completing the tasks?")
+    stress_level = st.radio("Select your stress level:", ["Low Stress", "Medium Stress", "High Load", "Burnout"])
+
+    st.write("Which task did you find most stressful?")
+    most_stressful_task = st.selectbox("Choose the task you found most stressful:", ["Sentence Rephrasing", "Report Writing", "Python Code"])
+
+    st.write("Which task did you find least stressful?")
+    least_stressful_task = st.selectbox("Choose the task you found least stressful:", ["Sentence Rephrasing", "Report Writing", "Python Code"])
+
+    additional_feedback = st.text_area("Additional feedback:")
+
+    timestamp = datetime.datetime.now().strftime("%B %d, %Y - %I:%M %p")
+
+    if st.button("Submit Feedback"):
+        try:
+            with open(f"data/Feedback/feedback_{timestamp}.txt", "a") as f:
+                f.write(f"Timestamp: {timestamp}\n")
+                f.write(f"Stress Level: {stress_level}\n")
+                f.write(f"Most Stressful Task: {most_stressful_task}\n")
+                f.write(f"Least Stressful Task: {least_stressful_task}\n")
+                if additional_feedback:
+                    f.write(f"Additional Feedback: {additional_feedback}\n")
+                f.write("=" * 50 + "\n")
+            st.success("Thank you for your feedback!")
+        except Exception as e:
+            st.error(f"Failed to save feedback: {e}")
+
 # Main Function
 def time_constraint_task():
     st.title("Time-Constrained Tasks")
@@ -248,3 +248,6 @@ def time_constraint_task():
     word_rephrase_task()
     report_writing_task()
     python_program_task()
+    st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)  # Adding extra space
+    st.markdown("<hr>", unsafe_allow_html=True)  # Horizontal lin
+    collect_feedback()

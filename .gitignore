@@ -6,3 +6,4 @@ testng.html
 .DS_Store
 shape_predictor_68_face_landmarks.dat
 lbfmodel.yaml
+temp_code_*
