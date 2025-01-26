@@ -108,7 +108,7 @@ def report_writing_task():
     run_task_with_timer(task_name, task_description, logic, time_limit=10)
     
 # Task 3: Python Program Task
-# Task 3: Python Program Task
+
 def python_program_task():
     task_name = "Task 3 : Write a Python Program"
     task_description = """
@@ -128,7 +128,7 @@ def factorial(n: int) -> int:
 print(factorial(5))  # Expected: 120
 print(factorial(0))  # Expected: 1
     """
-    
+
     # Display the task instructions
     st.subheader(f"{task_name}")
     st.write(task_description)
@@ -140,27 +140,44 @@ print(factorial(0))  # Expected: 1
     code = st_ace(language="python", theme="monokai", font_size=14, value=st.session_state.code_editor, key="editor")
     st.session_state.code_editor = code
 
+    # Timer keys
     task_key = f"{task_name}_task"
     timer_key = f"{task_name}_timer"
     remaining_time_key = f"{task_name}_remaining_time"
     time_limit = 10  # Time limit in seconds
 
+    # Initialize session state variables
     if task_key not in st.session_state:
         st.session_state[task_key] = False
         st.session_state[timer_key] = None
         st.session_state[remaining_time_key] = time_limit
-        st.session_state.timer_placeholder = None
 
     # Start task button
     if st.button(f"Start {task_name}") and not st.session_state[task_key]:
         st.session_state[task_key] = True
         st.session_state[timer_key] = time.time()
         st.session_state[remaining_time_key] = time_limit
-        st.session_state.timer_placeholder = st.empty()
+        start_tracking(task_name)
 
-    # Run Code button
-    if st.button("Run Code"):
+    # Timer logic (non-blocking)
+    if st.session_state[task_key]:
+        current_time = time.time()
+        elapsed_time = current_time - st.session_state[timer_key]
+        remaining_time = max(time_limit - int(elapsed_time), 0)
+        st.session_state[remaining_time_key] = remaining_time
+
+        if remaining_time > 0:
+            st.info(f"⏳ Time Remaining: {remaining_time} seconds")
+        else:
+            st.warning("⏰ Time's up!")
+            st.balloons()
+            st.session_state[task_key] = False
+            stop_tracking(task_name)
+
+    # Run Code button (always visible)
+    if st.button("Run Code", key="run_code_button"):
         try:
+            # Write the code to a temporary file
             timestamp = datetime.datetime.now().strftime("%B %d, %Y - %I:%M %p")
             file_path = f"temp_code_{timestamp}.py"
             with open(file_path, "w") as f:
@@ -169,6 +186,7 @@ print(factorial(0))  # Expected: 1
             # Run the code and capture the output
             result = subprocess.run(["python", file_path], capture_output=True, text=True)
 
+            # Display the output
             st.subheader("Output:")
             if result.stdout:
                 st.text(result.stdout)
@@ -187,26 +205,12 @@ print(factorial(0))  # Expected: 1
         except Exception as e:
             st.error(f"Error: {e}")
 
-    # Timer logic
+    # Continuously refresh every second to ensure the timer updates in real time
     if st.session_state[task_key]:
-        if st.session_state.timer_placeholder is None:
-            st.session_state.timer_placeholder = st.empty()
-
-        current_time = time.time()
-        elapsed_time = current_time - st.session_state[timer_key]
-        remaining_time = max(time_limit - int(elapsed_time), 0)
-        st.session_state[remaining_time_key] = remaining_time
-
-        if remaining_time > 0:
-            st.session_state.timer_placeholder.info(f"⏳ Time Remaining: {remaining_time} seconds")
-            time.sleep(1)  # Delay to refresh
-        else:
-            st.session_state.timer_placeholder.warning("⏰ Time's up!")
-            st.balloons()
-            st.session_state[task_key] = False
-            st.session_state.timer_placeholder = None  # Clear the placeholder
-
-# Stress Level Feedback
+        time.sleep(1)
+        st.rerun()
+        
+        
 def collect_feedback():
     st.subheader("Stress Level Feedback")
 
