@@ -32,13 +32,12 @@ def run_task_with_timer(task_name, task_description, task_logic, time_limit=10):
     timer_key = f"{task_name}_timer"
     remaining_time_key = f"{task_name}_remaining_time"
 
-    # Initialize state variables if not already initialized
+    # Initialize state variables
     if task_key not in st.session_state:
         st.session_state[task_key] = False
         st.session_state[timer_key] = None
         st.session_state[remaining_time_key] = time_limit
 
-    # Check if button is clicked to start the task
     if st.button(f"Start {task_name}") and not st.session_state[task_key]:
         st.session_state[task_key] = True
         st.session_state[timer_key] = time.time()
@@ -46,7 +45,8 @@ def run_task_with_timer(task_name, task_description, task_logic, time_limit=10):
 
     # Only show the timer and logic after the task has started
     if st.session_state[task_key]:
-        timer_placeholder = st.empty()  # Placeholder for timer
+        # Placeholder for timer
+        timer_placeholder = st.empty()  
 
         current_time = time.time()
         elapsed_time = current_time - st.session_state[timer_key]
@@ -107,12 +107,14 @@ def report_writing_task():
 
     run_task_with_timer(task_name, task_description, logic, time_limit=10)
     
-    
-    
-# Task 3: Python Program Task
 # Task 3: Python Program Task
 # Task 3: Python Program Task
 def python_program_task():
+    import time
+    import subprocess
+    import streamlit as st
+    from streamlit_ace import st_ace
+
     task_name = "Task 3 : Write a Python Program"
     task_description = """
     Write a program to calculate the factorial of a number. Define a function named `factorial(n)` that:
@@ -120,6 +122,13 @@ def python_program_task():
     - The factorial of 0 is defined as 1.
     - Complete the code below.
     """
+    
+    # Add visual warning for only 1 attempt allowed
+    st.markdown(
+        "<h3 style='color:red;'>❗<b>Only 1 attempt is allowed!</b> ❗</h3>", 
+        unsafe_allow_html=True
+    )
+
     default_code = """
 def factorial(n: int) -> int:
     if n == 0:
@@ -136,31 +145,39 @@ print(factorial(0))  # Expected: 1
     st.subheader(f"{task_name}")
     st.write(task_description)
 
-    # Code editor
+    # Preserve code editor state across reruns
+    if "code_editor" not in st.session_state:
+        st.session_state.code_editor = default_code
+
     code = st_ace(
         language="python",
         theme="monokai",
         font_size=14,
-        value=default_code,
+        value=st.session_state.code_editor,
         key="editor",
     )
+    st.session_state.code_editor = code
 
-    # Display timer
+    # Timer state management
     task_key = f"{task_name}_task"
     timer_key = f"{task_name}_timer"
     remaining_time_key = f"{task_name}_remaining_time"
-    time_limit = 10
+    time_limit = 10  # Time limit in seconds
 
     if task_key not in st.session_state:
         st.session_state[task_key] = False
         st.session_state[timer_key] = None
         st.session_state[remaining_time_key] = time_limit
+        st.session_state.timer_placeholder = None
 
+    # Start task button
     if st.button(f"Start {task_name}") and not st.session_state[task_key]:
         st.session_state[task_key] = True
         st.session_state[timer_key] = time.time()
+        st.session_state[remaining_time_key] = time_limit
+        st.session_state.timer_placeholder = st.empty()
 
-    # Run code button
+    # Run Code button (independent of the timer)
     if st.button("Run Code"):
         try:
             # Save the code to a temporary Python file
@@ -179,14 +196,14 @@ print(factorial(0))  # Expected: 1
             if result.stderr:
                 st.error(result.stderr)
 
-            # Evaluate against test cases
+            # Evaluate test cases
             outputs = [
                 int(line.strip())
                 for line in result.stdout.strip().split("\n")
                 if line.strip().isdigit()
             ]
             expected_outputs = [120, 1]
-            
+
             if outputs == expected_outputs:
                 st.success("Test Cases Passed!")
             else:
@@ -197,26 +214,29 @@ print(factorial(0))  # Expected: 1
         except Exception as e:
             st.error(f"Error: {e}")
 
-    # Timer logic 
+    # Timer logic
     if st.session_state[task_key]:
-        timer_placeholder = st.empty()  # Placeholder for timer
+        if st.session_state.timer_placeholder is None:
+            st.session_state.timer_placeholder = st.empty()  # Create placeholder once
 
         current_time = time.time()
         elapsed_time = current_time - st.session_state[timer_key]
         remaining_time = max(time_limit - int(elapsed_time), 0)
         st.session_state[remaining_time_key] = remaining_time
-        
+
         if remaining_time > 0:
             # Update the timer
-            timer_placeholder.info(f"⏳ Time Remaining: {remaining_time} seconds")
+            st.session_state.timer_placeholder.info(
+                f"⏳ Time Remaining: {remaining_time} seconds"
+            )
             time.sleep(1)
-            st.rerun()  # Re-run only this function
+            st.rerun()  # Re-run the app to update the timer
         else:
-            timer_placeholder.warning("⏰ Time's up!")
+            # Time's up, stop the task and show a message
+            st.session_state.timer_placeholder.warning("⏰ Time's up!")
             st.balloons()
-            stop_tracking(task_name)
             st.session_state[task_key] = False
-
+            st.session_state.timer_placeholder = None  # Clear the placeholder
 # Main Function
 def time_constraint_task():
     st.title("Time-Constrained Tasks")
