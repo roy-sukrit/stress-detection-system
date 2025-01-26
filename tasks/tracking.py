@@ -17,15 +17,15 @@ gaze_thread = None
 session_filename = None
 
 # Tracking Method
-def start_tracking():
+def start_tracking(task_name):
     global session_filename, gaze_thread
     with lock:  # Synchronize access to shared variables
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        session_filename = f"data/computer_interaction_{timestamp}.txt"
+        timestamp = datetime.datetime.now().strftime("%B %d, %Y - %I:%M %p")
+        session_filename = f"data/{task_name}/U_data_{timestamp}.txt"
         print(f"Starting tracking... Data will be saved to {session_filename}")
 
     session_active.set()
-    start_new_session(session_filename)
+    start_new_session(session_filename,task_name)
     
      # Start listeners in separate threads
     gaze_thread = threading.Thread(target=gaze_tracking, args=(session_filename,))
@@ -41,7 +41,7 @@ def start_tracking():
     # mouse_listener.join()
     # keyboard_listener.join()
 
-def stop_tracking():
+def stop_tracking(task_name):
 
     global mouse_listener, keyboard_listener, gaze_thread, session_filename
     with lock:
@@ -69,8 +69,11 @@ def log_to_file(filename, message):
     with open(filename, "a") as f:
         f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
 
-def start_new_session(filename):
+def start_new_session(filename,task_name):
     """Log the start of a new session."""
+    
+    log_to_file(filename, f"====== {task_name}======")
+
     log_to_file(filename, "====== New Session Start ======")
     log_to_file(filename, f"Session Start Time: {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
