@@ -5,7 +5,10 @@ from tasks.tracking import start_tracking, stop_tracking
 from streamlit_ace import st_ace
 import subprocess
 import datetime
-
+import streamlit_sortables  # Drag-and-drop sorting UI
+from streamlit_sortables import sort_items
+# from streamlit_sortables import st_sortable
+import random
 
 # Helper function to save results
 def save_results(task_name, user_input, correct_answer=None):
@@ -18,6 +21,7 @@ def save_results(task_name, user_input, correct_answer=None):
             f.write("=" * 50 + "\n")
             f.write(f"Task: {task_name}\n")
             f.write(f"User Input: {user_input}\n")
+            
             if correct_answer:
                 f.write(f"Correct Answer: {correct_answer}\n")
             f.write("=" * 50 + "\n")
@@ -65,32 +69,52 @@ def run_task_with_timer(task_name, task_description, task_logic, time_limit=10):
             task_logic()
             st.session_state[task_key] = False
 
-# Task 1: Word Rephrase Task
 def word_rephrase_task():
-    task_name = "Task 1: Word Rephrase Task"
-    task_description = "Reorder the following words to form a coherent sentence:"
-    words = ["stress", "analyzing", "Cognitive", "digital", "behaviors", "involves"]
-    correct_sentence = "Cognitive stress involves analyzing digital behaviors."
+    task_name = "Task 1: Word Unscramble Task"
+    task_description = "Unscramble the following words to form correct words:"
     
-    st.subheader(f"{task_name}")
+    word_pairs = {
+        "stsercs": "stress",
+        "gnirotinom": "monitoring",
+        "erhavoib": "behavior",
+        "gilatid": "digital",
+        "siyalnana": "analysis"
+    }
+
+    st.subheader(task_name)
     st.write(task_description)
-    st.write(f"Words to reorder: `{', '.join(words)}`")
-    user_input = st.text_area("Type your reordered sentence here:")
+
+    user_answers = {}
+    
+    # User input for unscrambling words
+    for scrambled_word in word_pairs.keys():
+        user_answers[scrambled_word] = st.text_input(f"Unscramble: `{scrambled_word}`", key=scrambled_word)
 
     def logic():
-        st.write(f"Your input: {user_input}")
-        if user_input.strip() == correct_sentence:
-            st.success("Correct! Well done!")
-        else:
-            st.error("Incorrect. The correct sentence is:")
-            st.write(f"`{correct_sentence}`")
-        save_results(task_name, user_input, correct_sentence)
+        correct_count = 0
+        st.write("### Results:")
+        
+        # Compare user's input with correct words
+        for scrambled, correct in word_pairs.items():
+            user_input = user_answers[scrambled].strip().lower()
+            if user_input == correct:
+                st.success(f"✅ `{scrambled}` → `{user_input}` (Correct)")
+                correct_count += 1
+            else:
+                st.error(f"❌ `{scrambled}` → `{user_input}` (Incorrect, Correct Answer: `{correct}`)")
 
+        st.write(f"### Final Score: {correct_count} / {len(word_pairs)}")
+
+        # Save results (you can implement the save logic as needed)
+        save_results(task_name, user_answers, word_pairs)
+
+    # Start the task and run with a timer
     run_task_with_timer(task_name, task_description, logic)
 
-# Task 2: Report Writing Task
+
+# Task 3: Report Writing Task
 def report_writing_task():
-    task_name = "Task 2: Report Writing Task"
+    task_name = "Task 3: Report Writing Task"
     task_description = """
     Write a short report on the Mexican War of 1846. Be concise and focus on the main events.
     """
@@ -107,110 +131,59 @@ def report_writing_task():
 
     run_task_with_timer(task_name, task_description, logic, time_limit=10)
     
-# Task 3: Python Program Task
+ 
+# Task 2: Sentence Reorder Task
+# Task 2: Sentence Rephrase Task
+def sentence_rephrase_task():
+    task_name = "Task 2: Sentence Rephrase Task"
+    task_description = "Drag and drop the sentences to arrange them in the correct order."
 
-def python_program_task():
-    task_name = "Task 3 : Write a Python Program"
-    task_description = """
-    Write a program to calculate the factorial of a number. Define a function named `factorial(n)` that:
-    - Takes a positive integer `n` and returns its factorial.
-    - The factorial of 0 is defined as 1.
-    - Complete the code below.
-    """
-    default_code = """
-def factorial(n: int) -> int:
-    if n == 0:
-        return 1
-    # Change from here    
-    return -1
-    
-# Example usage:
-print(factorial(5))  # Expected: 120
-print(factorial(0))  # Expected: 1
-    """
+    correct_order = [
+        "Many people spend hours on digital devices daily.",
+        "Digital behavior analysis helps in understanding user stress patterns.",
+        "AI models can predict stress levels based on user interactions.",
+        "Identifying stress early can lead to better mental well-being.",
+        "This results in cognitive overload and stress."
+    ]
 
-    # Display the task instructions
-    st.subheader(f"{task_name}")
+    # Initialize session state for user order (only once)
+    if "user_order" not in st.session_state:
+        shuffled_sentences = correct_order.copy()
+        random.shuffle(shuffled_sentences)
+        st.session_state["user_order"] = shuffled_sentences
+
+    st.subheader(task_name)
     st.write(task_description)
-    st.markdown("<h3 style='color:red;'>❗<b>Only 1 attempt is allowed!</b> ❗</h3>", unsafe_allow_html=True)
 
-    if "code_editor" not in st.session_state:
-        st.session_state.code_editor = default_code
+    # Use streamlit-sortables to handle drag-and-drop and persist state in session
+    user_order = sort_items(st.session_state["user_order"], direction="vertical")
 
-    code = st_ace(language="python", theme="monokai", font_size=14, value=st.session_state.code_editor, key="editor")
-    st.session_state.code_editor = code
+    # Store the updated order back into session state to maintain the user's progress
+    st.session_state["user_order"] = user_order
 
-    # Timer keys
-    task_key = f"{task_name}_task"
-    timer_key = f"{task_name}_timer"
-    remaining_time_key = f"{task_name}_remaining_time"
-    time_limit = 10  # Time limit in seconds
+    # Logic function for evaluating user input
+    def logic():
+        # Compare user order with correct order
+        correct_count = sum(1 for u, c in zip(user_order, correct_order) if u == c)
 
-    # Initialize session state variables
-    if task_key not in st.session_state:
-        st.session_state[task_key] = False
-        st.session_state[timer_key] = None
-        st.session_state[remaining_time_key] = time_limit
-
-    # Start task button
-    if st.button(f"Start {task_name}") and not st.session_state[task_key]:
-        st.session_state[task_key] = True
-        st.session_state[timer_key] = time.time()
-        st.session_state[remaining_time_key] = time_limit
-        start_tracking(task_name)
-
-    # Timer logic (non-blocking)
-    if st.session_state[task_key]:
-        current_time = time.time()
-        elapsed_time = current_time - st.session_state[timer_key]
-        remaining_time = max(time_limit - int(elapsed_time), 0)
-        st.session_state[remaining_time_key] = remaining_time
-
-        if remaining_time > 0:
-            st.info(f"⏳ Time Remaining: {remaining_time} seconds")
-        else:
-            st.warning("⏰ Time's up!")
-            st.balloons()
-            st.session_state[task_key] = False
-            stop_tracking(task_name)
-
-    # Run Code button (always visible)
-    if st.button("Run Code", key="run_code_button"):
-        try:
-            # Write the code to a temporary file
-            timestamp = datetime.datetime.now().strftime("%B %d, %Y - %I:%M %p")
-            file_path = f"temp_code_{timestamp}.py"
-            with open(file_path, "w") as f:
-                f.write(code)
-
-            # Run the code and capture the output
-            result = subprocess.run(["python", file_path], capture_output=True, text=True)
-
-            # Display the output
-            st.subheader("Output:")
-            if result.stdout:
-                st.text(result.stdout)
-            if result.stderr:
-                st.error(result.stderr)
-
-            # Evaluate test cases
-            outputs = [int(line.strip()) for line in result.stdout.strip().split("\n") if line.strip().isdigit()]
-            expected_outputs = [120, 1]
-
-            if outputs == expected_outputs:
-                st.success("Test Cases Passed!")
+        st.write("### Results:")
+        for i, (user_sentence, correct_sentence) in enumerate(zip(user_order, correct_order), 1):
+            if user_sentence == correct_sentence:
+                st.success(f"✅ Position {i} is correct.")
             else:
-                st.warning(f"Test Cases Failed.\nExpected: {expected_outputs}\nGot: {outputs}")
+                st.error(f"❌ Position {i} is incorrect. Correct sentence: `{correct_sentence}`")
 
-        except Exception as e:
-            st.error(f"Error: {e}")
+        st.write(f"### Final Score: {correct_count} / {len(correct_order)}")
+        save_results(task_name, user_order, correct_order)
 
-    # Continuously refresh every second to ensure the timer updates in real time
-    if st.session_state[task_key]:
-        time.sleep(1)
-        st.rerun()
-        
-        
+        # Hide results after 5 seconds (for example)
+        time.sleep(2)  # Wait for 5 seconds
+        st.empty()  # Clears the current output
+
+    # Run the task with a timer and evaluate once the user presses submit
+    run_task_with_timer(task_name, task_description, logic)
+
+
 def collect_feedback():
     st.subheader("Stress Level Feedback")
 
@@ -272,8 +245,9 @@ def time_constraint_task():
     """)
 
     word_rephrase_task()
+    sentence_rephrase_task()
     report_writing_task()
-    python_program_task()
+    
     st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)  # Adding extra space
     st.markdown("<hr>", unsafe_allow_html=True)  # Horizontal lin
     collect_feedback()
