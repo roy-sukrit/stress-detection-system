@@ -2,83 +2,101 @@ import streamlit as st
 import random
 import time
 import uuid
+from streamlit_autorefresh import st_autorefresh
+
 
 def combination_task():
-    st.header("Combination Task: Time Constraints and Interruptions")
-    st.write("""
-    This task combines time constraints and random interruptions. 
-    You need to complete the main task within the given time while handling interruptions effectively.
-    """)
+    """Task combining a timer and interruptions while writing an email based on a video."""
 
-    # Main Task: Typing a paragraph under a time constraint
-    paragraph = "Stress levels can significantly impact productivity and mental health. Analyzing digital behavior offers valuable insights."
-    st.write(f"Main Task: Type the following paragraph within the given time:\n`{paragraph}`")
-    user_input = st.text_area("Start typing here:", key="combination_task")
+    # Initialize session state variables
+    if "task_started" not in st.session_state:
+        st.session_state.task_started = False
+    if "last_interrupt_time" not in st.session_state:
+        st.session_state.last_interrupt_time = time.time()
+    if "interrupt_interval" not in st.session_state:
+        st.session_state.interrupt_interval = random.randint(5, 10)  # Random interval (5-10 sec)
+    if "interrupt" not in st.session_state:
+        st.session_state.interrupt = False
+    if "audio_file" not in st.session_state:
+        st.session_state.audio_file = None  # Store the selected audio file
+    if "time_remaining" not in st.session_state:
+        st.session_state.time_remaining = 180  # Timer set to 3 minutes (180 seconds)
+    if "email_draft" not in st.session_state:
+        st.session_state.email_draft = ""  # Initialize only if not set
 
-    # Timer setup for the task (e.g., 90 seconds)
-    task_duration = 90  # seconds
-    st.info(f"You have {task_duration} seconds to complete the task.")
+    # Auto-refresh every second to update the timer
+    st_autorefresh(interval=1000, key="auto_refresh")
 
-    # Interruptions setup
-    interruptions = [
-        {"type": "popup", "message": "Click this button to dismiss the interruption."},
-        {"type": "alert", "message": "Read and acknowledge this alert."},
-        {"type": "question", "message": "Answer this question: What's 7 + 4?"}
+    # App Title
+    st.title("Timed Email Writing Task with Interruptions")
+
+    # Step 1: Play Video
+    st.video("https://www.youtube.com/watch?v=P6FORpg0KVo")
+    st.write("**Watch the video and write a professional email about how Duolingo uses methods like gamification, streaks, notifications, etc., which can be used in your company.**")
+    st.write("🔔 **You will face random interruptions while writing!**")
+
+    # Step 2: Define multiple audio interruptions
+    interruption_files = [
+        "tasks/crowd-clapping-and-cheering-effect-272056.mp3",
     ]
 
-    # Initialize logging
-    interruption_responses = []
-    task_start_time = time.time()
-    time_remaining = task_duration
+    # Step 3: Start Task Button
+    if not st.session_state.task_started:
+        if st.button("Start Task"):
+            st.session_state.task_started = True
+            st.session_state.last_interrupt_time = time.time()
+            st.session_state.interrupt = False
+            st.session_state.audio_file = None
+            st.session_state.time_remaining = 180  # Reset timer to 3 minutes
+            st.session_state.email_draft = ""  # Reset email draft
 
-    # Counter for unique keys
-    interruption_count = 0
+    # Step 4: Timer Logic
+    if st.session_state.task_started:
+        if st.session_state.time_remaining > 0:
+            st.session_state.time_remaining -= 1
+        else:
+            st.warning("⏳ **Time's up! Please submit your email.**")
 
-    while time_remaining > 0:
-        # Display remaining time
-        time_elapsed = time.time() - task_start_time
-        time_remaining = task_duration - time_elapsed
-        st.info(f"Time Remaining: {int(time_remaining)} seconds")
+        # Display the countdown timer
+        st.write(f"⏰ **Time Remaining:** {st.session_state.time_remaining} seconds")
 
-        # Simulate random interruptions
-        if random.random() < 0.3:  # 30% chance of an interruption every second
-            interruption = random.choice(interruptions)
-            unique_key = f"interruption_{interruption_count}"  # Ensure unique key for every interruption
-            if interruption["type"] == "popup":
-                if st.button(interruption["message"], key=unique_key):
-                    interruption_responses.append({"type": "popup", "response": "Handled", "time": time_elapsed})
-                    st.success("You dismissed the popup!")
-            elif interruption["type"] == "alert":
-                st.warning(interruption["message"])
-                if st.button("Acknowledge", key=unique_key):
-                    interruption_responses.append({"type": "alert", "response": "Acknowledged", "time": time_elapsed})
-                    st.success("You acknowledged the alert!")
-            elif interruption["type"] == "question":
-                # user_answer = st.text_input(interruption["message"], key=unique_key)
-                user_answer = st.text_input(interruption["message"], key=f"question_{len(interruption_responses)}_{uuid.uuid4()}"
-)
-                if user_answer:
-                    interruption_responses.append({"type": "question", "response": user_answer, "time": time_elapsed})
-                    st.success("You answered the question!")
-            interruption_count += 1  # Increment counter for unique keys
+    # Step 5: Email Writing Input Box (Improved UI with Subject and To)
+    st.write("**To:** stephen.johnson@gmail.com")  # Static email recipient
+    st.write("**Subject:** How Duolingo's Methods Can Enhance Your Company")
+    
+    email_draft = st.text_area(
+        "📧 Write your email based on the video:",
+        value=st.session_state.email_draft,
+        key="email_draft",
+        height=250,
+        help="Make sure to include a professional greeting, the body, and a conclusion."
+    )
 
-        # Break if time runs out
-        if time_remaining <= 0:
-            break
+    st.write("**Structure Suggestions**:")
+    st.write("1. **Greeting:** Start with a formal greeting like 'Dear [Recipient's Name],'")
+    st.write("2. **Body:** Discuss how Duolingo uses gamification, streaks, notifications, etc.")
+    st.write("3. **Closing:** End with a formal closing like 'Sincerely,' followed by your name.")
+    st.write("🔑 **Remember:** The email should have a clear flow from greeting to body to closing.")
 
-        # Small delay to avoid overwhelming the user with interruptions
-        time.sleep(1)
+    # Step 6: Handle Interruptions
+    if st.session_state.task_started and st.session_state.time_remaining > 0:
+        current_time = time.time()
+        if current_time - st.session_state.last_interrupt_time >= st.session_state.interrupt_interval:
+            st.session_state.interrupt = True
+            st.session_state.last_interrupt_time = current_time
+            st.session_state.interrupt_interval = random.randint(8, 12)  # Set new random interval
+            st.session_state.audio_file = random.choice(interruption_files)  # Select a random audio file
 
-    # Task end
-    st.success("Task complete! Thank you for your participation.")
+        # Play interruption audio if triggered
+        if st.session_state.interrupt and st.session_state.audio_file:
+            st.warning("🔊 **Interruption! Stay focused!**")
+            st.audio(st.session_state.audio_file, format="audio/mp3", autoplay=True)
+            st.session_state.interrupt = False  # Reset interrupt flag
 
-    # Log results
-    st.write("**Interruption Responses**:")
-    for idx, response in enumerate(interruption_responses, start=1):
-        st.write(f"Interruption {idx}: {response}")
-
-    # Save results
-    with open("data/combination_task_results.txt", "a") as f:
-        f.write(f"User Input: {user_input}\n")
-        f.write(f"Interruption Responses: {interruption_responses}\n")
-        f.write("=" * 50 + "\n")
+    # Step 7: Submit Button (End Task)
+    if st.session_state.task_started:
+        if st.button("Submit Email") or st.session_state.time_remaining <= 0:
+            st.success("✅ Email submitted successfully!")
+            st.write("📨 **Your Email Draft:**")
+            st.write(email_draft)  # Display user's draft
+            st.session_state.task_started = False  # Stop task
