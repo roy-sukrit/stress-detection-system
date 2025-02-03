@@ -6,6 +6,7 @@ import random
 import threading
 from typing import List
 from PIL import Image
+from streamlit_autorefresh import st_autorefresh
 
 
 # Helper function to save results
@@ -251,10 +252,13 @@ def ethical_dilemma_game():
 
 # Function to initialize session state variables
 
+# Function to simulate interruptions based on a random timer
+
+# Function to simulate interruptions based on a random timer
 def interruption_task():
     """Handles stress detection task with interruptions."""
 
-    # Initialize session state
+    # Initialize session state variables
     if "task_started" not in st.session_state:
         st.session_state.task_started = False
     if "last_interrupt_time" not in st.session_state:
@@ -263,12 +267,13 @@ def interruption_task():
         st.session_state.interrupt_interval = random.randint(5, 10)  # Random interval (5-10 sec)
     if "interrupt" not in st.session_state:
         st.session_state.interrupt = False
-    if "audio_file" not in st.session_state:
-        st.session_state.audio_file = None
     if "answers" not in st.session_state:
         st.session_state.answers = {}
 
-    # App title
+    # Auto-refresh every 5 seconds to check for interruptions
+    st_autorefresh(interval=5000, key="auto_refresh")
+
+    # App Title
     st.title("Interruption-Based Task")
 
     # Step 1: Play Video
@@ -281,21 +286,24 @@ def interruption_task():
         "What key point did the speaker make about real-world applications?",
         "Summarize the conclusion in one sentence.",
     ]
+    
+    interruption_files = [
+        "tasks/crowd-clapping-and-cheering-effect-272056.mp3",
+        "tasks/crowd-murmuring-60721.mp3",
+        "tasks/crowd-noise-284490.mp3",
+    ]
 
-    # Step 3: Define interruption sounds
-    interruption_files = ["tasks/crowd-clapping-and-cheering-effect-272056.mp3"]
 
-    # Step 4: Start Task Button
+    # Step 3: Start Task Button
     if not st.session_state.task_started:
         if st.button("Start Task"):
             st.session_state.task_started = True
             st.session_state.last_interrupt_time = time.time()
             st.session_state.interrupt = False
-            st.session_state.audio_file = None
             st.session_state.answers = {f"question_{idx}": "" for idx in range(1, len(questions) + 1)}
             st.write("**Task started! Answer the questions below. Interruptions will occur!**")
 
-    # Step 5: Display Questions
+    # Step 4: Display Questions
     if st.session_state.task_started:
         for idx, question in enumerate(questions, start=1):
             answer_key = f"question_{idx}"
@@ -305,33 +313,21 @@ def interruption_task():
                 key=answer_key,
             )
 
-    # Step 6: Handle interruptions
+    # Step 5: Handle interruptions
     if st.session_state.task_started:
-        interrupt_container = st.empty()  # Allows UI updates
-
-        # Check if it's time for an interruption
-        if time.time() - st.session_state.last_interrupt_time >= st.session_state.interrupt_interval:
+        current_time = time.time()
+        if current_time - st.session_state.last_interrupt_time >= st.session_state.interrupt_interval:
             st.session_state.interrupt = True
-            st.session_state.last_interrupt_time = time.time()
+            st.session_state.last_interrupt_time = current_time
             st.session_state.interrupt_interval = random.randint(8, 12)  # Set new random interval
-            st.session_state.audio_file = random.choice(interruption_files)
 
         # Play interruption audio if triggered
-        if st.session_state.interrupt and st.session_state.audio_file:
-            if os.path.exists(st.session_state.audio_file):
-                with interrupt_container:
-                    st.warning("🔊 Interruption! Stay focused!")
-                    audio_placeholder = st.empty()  # Creates a temporary space for audio
-                    audio_placeholder.audio(st.session_state.audio_file, format="audio/mp3",autoplay=True)
-                    time.sleep(8)
-                    audio_placeholder.empty()  # Clears the audio element
-
-            else:
-                st.error(f"Interruption file '{st.session_state.audio_file}' not found!")
-
+        if st.session_state.interrupt:
+            st.warning("🔊 **Interruption! Stay focused!**")
+            st.audio(random.choice(interruption_files), format="audio/mp3",autoplay=True)
             st.session_state.interrupt = False  # Reset interrupt flag
 
-    # Step 7: Submit Button (End Task)
+    # Step 6: Submit Button (End Task)
     if st.session_state.task_started:
         if st.button("Submit Answers"):
             st.success("✅ Responses submitted successfully!")
@@ -339,7 +335,6 @@ def interruption_task():
             for idx, question in enumerate(questions, start=1):
                 st.write(f"Q{idx}: {st.session_state.answers[f'question_{idx}']}")
             st.session_state.task_started = False  # Stop task
-
 def run_all_tasks():
     st.title("Interactive Tasks with Time Constraints")
     interruption_task()
