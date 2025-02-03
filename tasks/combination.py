@@ -3,6 +3,7 @@ import random
 import time
 import uuid
 from streamlit_autorefresh import st_autorefresh
+from tasks.tracking import start_tracking, stop_tracking
 
 
 def combination_task():
@@ -42,6 +43,7 @@ def combination_task():
 
     # Step 3: Start Task Button
     if not st.session_state.task_started:
+
         if st.button("Start Task"):
             st.session_state.task_started = True
             st.session_state.last_interrupt_time = time.time()
@@ -49,6 +51,8 @@ def combination_task():
             st.session_state.audio_file = None
             st.session_state.time_remaining = 180  # Reset timer to 3 minutes
             st.session_state.email_draft = ""  # Reset email draft
+            start_tracking("Interruptions Task")
+
 
     # Step 4: Timer Logic
     if st.session_state.task_started:
@@ -97,6 +101,9 @@ def combination_task():
     if st.session_state.task_started:
         if st.button("Submit Email") or st.session_state.time_remaining <= 0:
             st.success("✅ Email submitted successfully!")
+            st.balloons()
+
             st.write("📨 **Your Email Draft:**")
             st.write(email_draft)  # Display user's draft
             st.session_state.task_started = False  # Stop task
+            stop_tracking("Interruptions Task")
