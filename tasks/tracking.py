@@ -33,13 +33,13 @@ def start_tracking(task_name):
     keyboard_listener = threading.Thread(target=keyboard_tracking, args=(session_filename,))
     
     gaze_thread.start()
-    # mouse_listener.start()
-    # keyboard_listener.start()
+    mouse_listener.start()
+    keyboard_listener.start()
 
     # Wait for all threads to finish
     gaze_thread.join()
-    # mouse_listener.join()
-    # keyboard_listener.join()
+    mouse_listener.join()
+    keyboard_listener.join()
 
 def stop_tracking(task_name):
 

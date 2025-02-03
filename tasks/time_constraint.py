@@ -3,12 +3,16 @@ import time
 import os
 from tasks.tracking import start_tracking, stop_tracking
 from streamlit_ace import st_ace
-import subprocess
 import datetime
-import streamlit_sortables  # Drag-and-drop sorting UI
 from streamlit_sortables import sort_items
-# from streamlit_sortables import st_sortable
 import random
+from streamlit_autorefresh import st_autorefresh
+
+# Helper function to clear old results
+def clear_old_results():
+    for key in list(st.session_state.keys()):
+        if "task" in key or "timer" in key or "user_order" in key:
+            del st.session_state[key]
 
 # Helper function to save results
 def save_results(task_name, user_input, correct_answer=None):
@@ -43,6 +47,8 @@ def run_task_with_timer(task_name, task_description, task_logic, time_limit=10):
         st.session_state[remaining_time_key] = time_limit
 
     if st.button(f"Start {task_name}") and not st.session_state[task_key]:
+        clear_old_results()  # Fix Issue 1: Clear previous task results
+
         st.session_state[task_key] = True
         st.session_state[timer_key] = time.time()
         start_tracking(task_name)
@@ -133,7 +139,6 @@ def report_writing_task():
     
  
 # Task 2: Sentence Reorder Task
-# Task 2: Sentence Rephrase Task
 def sentence_rephrase_task():
     task_name = "Task 2: Sentence Rephrase Task"
     task_description = "Drag and drop the sentences to arrange them in the correct order."
@@ -146,44 +151,47 @@ def sentence_rephrase_task():
         "This results in cognitive overload and stress."
     ]
 
-    # Initialize session state for user order (only once)
+    # Initialize session state for user order if it's the first time
     if "user_order" not in st.session_state:
         shuffled_sentences = correct_order.copy()
         random.shuffle(shuffled_sentences)
         st.session_state["user_order"] = shuffled_sentences
 
+    # Task description and instructions
     st.subheader(task_name)
     st.write(task_description)
 
-    # Use streamlit-sortables to handle drag-and-drop and persist state in session
-    user_order = sort_items(st.session_state["user_order"], direction="vertical")
+    # Display sentences with selectable options for reordering
+    st.write("### Arrange the sentences in the correct order:")
+    new_order = []
+    for i, sentence in enumerate(st.session_state["user_order"]):
+        # Use a selectbox to allow the user to reorder sentences
+        new_position = st.selectbox(
+            f"Sentence {i + 1}",
+            options=st.session_state["user_order"],
+            index=st.session_state["user_order"].index(sentence),
+            key=f"sentence_{i}"
+        )
+        new_order.append(new_position)
 
-    # Store the updated order back into session state to maintain the user's progress
-    st.session_state["user_order"] = user_order
+    # Update the session state with the new order
+    if new_order != st.session_state["user_order"]:
+        st.session_state["user_order"] = new_order
 
-    # Logic function for evaluating user input
+    # Result and Logic
     def logic():
-        # Compare user order with correct order
-        correct_count = sum(1 for u, c in zip(user_order, correct_order) if u == c)
-
+        correct_count = sum(1 for u, c in zip(st.session_state["user_order"], correct_order) if u == c)
         st.write("### Results:")
-        for i, (user_sentence, correct_sentence) in enumerate(zip(user_order, correct_order), 1):
+        for i, (user_sentence, correct_sentence) in enumerate(zip(st.session_state["user_order"], correct_order), 1):
             if user_sentence == correct_sentence:
                 st.success(f"✅ Position {i} is correct.")
             else:
                 st.error(f"❌ Position {i} is incorrect. Correct sentence: `{correct_sentence}`")
 
         st.write(f"### Final Score: {correct_count} / {len(correct_order)}")
-        save_results(task_name, user_order, correct_order)
 
-        # Hide results after 5 seconds (for example)
-        time.sleep(2)  # Wait for 5 seconds
-        st.empty()  # Clears the current output
-
-    # Run the task with a timer and evaluate once the user presses submit
+    # Trigger the timer and handle task completion logic
     run_task_with_timer(task_name, task_description, logic)
-
-
 def collect_feedback():
     st.subheader("Stress Level Feedback")
 
