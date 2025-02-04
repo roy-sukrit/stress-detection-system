@@ -7,6 +7,7 @@ import datetime
 from pynput import mouse, keyboard
 import dlib
 
+import csv
 
 # Initialize variables and a Lock
 lock = threading.Lock()
@@ -15,6 +16,29 @@ mouse_listener = None
 keyboard_listener = None
 gaze_thread = None
 session_filename = None
+
+
+
+def log_to_csv(filename, data):
+    """Helper function to log data to a CSV file."""
+    csv_filename = filename.replace(".txt", ".csv")  # Store CSV alongside TXT logs
+    
+    # Ensure the directory exists
+    directory = os.path.dirname(csv_filename)
+    if not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
+
+    # Check if the CSV file exists to determine if headers are needed
+    file_exists = os.path.isfile(csv_filename)
+
+    with open(csv_filename, mode="a", newline="") as f:
+        writer = csv.writer(f)
+        
+        # Write headers if the file is new
+        if not file_exists:
+            writer.writerow(["Timestamp", "Event Type", "Details"])
+        
+        writer.writerow(data)
 
 # Tracking Method
 def start_tracking(task_name):
@@ -68,6 +92,8 @@ def log_to_file(filename, message):
         os.makedirs(directory, exist_ok=True)
     with open(filename, "a") as f:
         f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
+    log_to_csv(filename, [time.strftime('%Y-%m-%d %H:%M:%S'), message.split(":")[0], message.split(":")[1] if ":" in message else ""])        
+        
 
 def start_new_session(filename,task_name):
     """Log the start of a new session."""
