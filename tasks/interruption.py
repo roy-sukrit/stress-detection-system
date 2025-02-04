@@ -8,6 +8,7 @@ from typing import List
 from PIL import Image
 from streamlit_autorefresh import st_autorefresh
 
+from tasks.time_constraint import save_results
 from tasks.tracking import start_tracking, stop_tracking
 
 # Helper function to save results
@@ -62,9 +63,9 @@ def interruption_task():
     ]
     
     interruption_files = [
-        "tasks/crowd-clapping-and-cheering-effect-272056.mp3",
-        "tasks/crowd-murmuring-60721.mp3",
-        "tasks/crowd-noise-284490.mp3",
+        "tasks/music/crowd-clapping.mp3",
+        "tasks/music/crowd-murmuring.mp3",
+        "tasks/music/crowd-noise.mp3",
     ]
 
 
@@ -77,7 +78,7 @@ def interruption_task():
             st.session_state.interrupt = False
             st.session_state.answers = {f"question_{idx}": "" for idx in range(1, len(questions) + 1)}
             st.write("**Task started! Answer the questions below. Interruptions will occur!**")
-            start_tracking("Interruptions Task")
+            start_tracking("Task 4: Interruptions Task")
 
 
     # Step 4: Display Questions
@@ -101,7 +102,7 @@ def interruption_task():
         # Play interruption audio if triggered
         if st.session_state.interrupt:
             st.warning("🔊 **Interruption! Stay focused!**")
-            # st.audio(random.choice(interruption_files), format="audio/mp3",autoplay=True)
+            st.audio(random.choice(interruption_files), format="audio/mp3",autoplay=True)
             st.session_state.interrupt = False  # Reset interrupt flag
 
     # Step 6: Submit Button (End Task)
@@ -114,7 +115,10 @@ def interruption_task():
             for idx, question in enumerate(questions, start=1):
                 st.write(f"Q{idx}: {st.session_state.answers[f'question_{idx}']}")
             st.session_state.task_started = False  # Stop task
-            stop_tracking("Interruptions Task")
+            stop_tracking("Task 4: Interruptions Task")
+            formatted_answers = "\n".join([f"{key}: {value}" for key, value in st.session_state.answers.items()])
+            save_results("Task 4: Interruptions Task",formatted_answers)
+
 
 
 def run_all_tasks():

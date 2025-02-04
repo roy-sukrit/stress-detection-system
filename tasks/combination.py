@@ -4,6 +4,7 @@ import time
 import uuid
 from streamlit_autorefresh import st_autorefresh
 from tasks.tracking import start_tracking, stop_tracking
+from tasks.time_constraint import save_results
 
 
 def combination_task():
@@ -38,8 +39,9 @@ def combination_task():
 
     # Step 2: Define multiple audio interruptions
     interruption_files = [
-        "tasks/crowd-clapping-and-cheering-effect-272056.mp3",
-    ]
+        "tasks/music/crowd-clapping.mp3",
+        "tasks/music/crowd-murmuring.mp3",
+        "tasks/music/crowd-noise.mp3",    ]
 
     # Step 3: Start Task Button
     if not st.session_state.task_started:
@@ -51,7 +53,7 @@ def combination_task():
             st.session_state.audio_file = None
             st.session_state.time_remaining = 180  # Reset timer to 3 minutes
             st.session_state.email_draft = ""  # Reset email draft
-            start_tracking("Interruptions Task")
+            start_tracking("Task 5: Combination Task")
 
 
     # Step 4: Timer Logic
@@ -106,4 +108,6 @@ def combination_task():
             st.write("📨 **Your Email Draft:**")
             st.write(email_draft)  # Display user's draft
             st.session_state.task_started = False  # Stop task
-            stop_tracking("Interruptions Task")
+            stop_tracking("Task 5: Combination Task")
+            save_results("Task 5: Combination Task",email_draft)
+
