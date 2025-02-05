@@ -36,7 +36,7 @@ def log_to_csv(filename, data):
         
         # Write headers if the file is new
         if not file_exists:
-            writer.writerow(["Timestamp", "Event Type", "Details"])
+            writer.writerow(["Timestamp", "Name","Event Details"])
         
         writer.writerow(data)
 
@@ -85,41 +85,41 @@ def stop_tracking(task_name):
         else:
             print("No active session to stop.")
 
-def log_to_file(filename, message):
+def log_to_file(filename,name, message):
     """Helper function to log data to a file."""
     directory = os.path.dirname(filename)
     if not os.path.exists(directory):
         os.makedirs(directory, exist_ok=True)
     with open(filename, "a") as f:
-        f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
-    log_to_csv(filename, [time.strftime('%Y-%m-%d %H:%M:%S'), message.split(":")[0], message.split(":")[1] if ":" in message else ""])        
+        f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {name} , {message}\n")
+    log_to_csv(filename, [time.strftime('%Y-%m-%d %H:%M:%S'),name, message.split(":")[0], message.split(":")[1] if ":" in message else ""])        
         
 
 def start_new_session(filename,task_name):
     """Log the start of a new session."""
     
-    log_to_file(filename, f"====== {task_name}======")
+    log_to_file(filename,"Session",  f"====== {task_name}======")
 
-    log_to_file(filename, "====== New Session Start ======")
-    log_to_file(filename, f"Session Start Time: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    log_to_file(filename,"Session",  "====== New Session Start ======")
+    log_to_file(filename, "Session", f"Session Start Time: {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
 def end_session(filename):
     """Log the end of a session."""
-    log_to_file(filename, f"====== Session End ======")
-    log_to_file(filename, f"Session End Time: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    log_to_file(filename,"Session", f"====== Session End ======")
+    log_to_file(filename, "Session", f"Session End Time: {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
 def mouse_tracking(filename):
     def on_move(x, y):
         if session_active.is_set():
-            log_to_file(filename, f"Mouse moved to ({x}, {y})")
+            log_to_file(filename, "Mouse",f"Mouse Move - ({x}, {y})")
 
     def on_click(x, y, button, pressed):
         if session_active.is_set():
-            log_to_file(filename, f"Mouse {'pressed' if pressed else 'released'} at ({x}, {y})")
+            log_to_file(filename,"Mouse", f"Mouse {'Press' if pressed else 'Release'} - ({x}, {y})")
 
     def on_scroll(x, y, dx, dy):
         if session_active.is_set():
-            log_to_file(filename, f"Scrolled at ({x}, {y}) with delta ({dx}, {dy})")
+            log_to_file(filename,"Mouse", f"Mouse Scroll -({x}, {y}) : Delta ({dx}, {dy})")
 
     global mouse_listener
     mouse_listener = mouse.Listener(on_move=on_move, on_click=on_click, on_scroll=on_scroll)
@@ -129,11 +129,11 @@ def mouse_tracking(filename):
 def keyboard_tracking(filename):
     def on_press(key):
         if session_active.is_set():
-            log_to_file(filename, f"Key pressed: {key}")
+            log_to_file(filename,"Keyboard", f"Key Press: {key}")
 
     def on_release(key):
         if session_active.is_set():
-            log_to_file(filename, f"Key released: {key}")
+            log_to_file(filename,"Keyboard",  f"Key Release: {key}")
         if key == keyboard.Key.esc:  # Stop listener on Esc key
             return False
 
@@ -162,7 +162,7 @@ def gaze_tracking_1(filename):
         while session_active.is_set():
             ret, frame = webcam.read()
             if not ret:
-                log_to_file(filename, "Error: Failed to grab frame")
+                log_to_file(filename,"Gaze Direction",  "Error: Failed to grab frame")
                 print("Failed to grab frame")
                 break
 
@@ -170,7 +170,7 @@ def gaze_tracking_1(filename):
             faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=6, minSize=(50, 50))
 
             if len(faces) == 0:
-                log_to_file(filename, "No face detected")
+                log_to_file(filename, "Gaze Direction","No face detected")
                 print("No face detected")
                 continue
 
@@ -180,7 +180,7 @@ def gaze_tracking_1(filename):
 
                 if len(eyes) >= 2:
                     gaze_direction = analyze_gaze_direction(eyes, roi_gray, w)
-                    log_to_file(filename, f"Gaze Direction: {gaze_direction}")
+                    log_to_file(filename,"Gaze Direction", f":{gaze_direction}")
                     print(f"Gaze Direction: {gaze_direction}")
                 else:
                     log_to_file(filename, "Not enough eyes detected")
@@ -189,13 +189,13 @@ def gaze_tracking_1(filename):
             time.sleep(0.5)  # Slight delay to prevent high CPU usage
 
     except Exception as e:
-        log_to_file(filename, f"Error during gaze tracking: {str(e)}")
+        log_to_file(filename,"Gaze Direction", f"Error during gaze tracking: {str(e)}")
         print(f"Error during gaze tracking: {str(e)}")
 
     finally:
         webcam.release()
         cv2.destroyAllWindows()
-        log_to_file(filename, "Gaze tracking session ended")
+        log_to_file(filename,"Gaze Direction", "Gaze tracking session ended")
 
 # #Approach 1 
 def analyze_gaze_direction_1(eyes, roi_gray, face_width):
@@ -285,7 +285,7 @@ def gaze_tracking(filename):
     detector = dlib.get_frontal_face_detector()
 
     if not webcam.isOpened():
-        log_to_file(filename, "Error: Webcam not found!")
+        log_to_file(filename, "Error","Error: Webcam not found!")
         print("Error: Webcam not found!")
         return
 
@@ -293,7 +293,7 @@ def gaze_tracking(filename):
         while session_active.is_set():
             ret, frame = webcam.read()
             if not ret:
-                log_to_file(filename, "Error: Failed to grab frame")
+                log_to_file(filename, "Error", "Error: Failed to grab frame")
                 print("Failed to grab frame")
                 break
 
@@ -301,7 +301,7 @@ def gaze_tracking(filename):
             faces = detector(gray_frame)
 
             if len(faces) == 0:
-                log_to_file(filename, "No face detected")
+                log_to_file(filename, "Error", "No face detected")
                 print("No face detected")
                 continue
 
@@ -321,25 +321,25 @@ def gaze_tracking(filename):
                 # Analyze gaze direction
                 gaze_direction = analyze_gaze_direction(eyes, gray_frame, face_width)
                 
-                log_to_file(filename, f"Gaze Direction: {gaze_direction}")
+                log_to_file(filename,  "Gaze",f": {gaze_direction}")
                 print(f"Gaze Direction: {gaze_direction}")
 
                 # Head pose estimation
                 image_points = get_image_points(landmarks)
                 head_pose = calculate_head_pose(image_points, frame)
-                log_to_file(filename, f"Head Pose: {head_pose}")
+                log_to_file(filename, "Head Pose", f": {head_pose}")
                 print(f"Head Pose: {head_pose}")
 
             time.sleep(0.5)  # Prevent high CPU usage
 
     except Exception as e:
-        log_to_file(filename, f"Error during gaze tracking: {str(e)}")
+        log_to_file(filename, "Error", f"Error during gaze tracking: {str(e)}")
         print(f"Error during gaze tracking: {str(e)}")
 
     finally:
         webcam.release()
         cv2.destroyAllWindows()
-        log_to_file(filename, "Gaze tracking session ended")
+        log_to_file(filename,  "Gaze","Gaze tracking session ended")
 
 
 # Helper Functions
