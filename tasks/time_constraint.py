@@ -7,7 +7,9 @@ import datetime
 from streamlit_sortables import sort_items
 import random
 from streamlit_autorefresh import st_autorefresh
-
+import csv
+import datetime
+from tasks.tracking import collect_feedback
 # Helper function to clear old results
 def clear_old_results():
     for key in list(st.session_state.keys()):
@@ -192,59 +194,7 @@ def sentence_rephrase_task():
 
     # Trigger the timer and handle task completion logic
     run_task_with_timer(task_name, task_description, logic)
-def collect_feedback():
-    st.subheader("Stress Level Feedback")
 
-    # Stress level question
-    st.write("How did you feel after completing the tasks?")
-    stress_level = st.radio("Select your stress level:", ["Low Stress", "Medium Stress", "High Load", "Burnout"])
-
-    # Most and least stressful task questions
-    st.write("Which task did you find most stressful?")
-    most_stressful_task = st.selectbox("Choose the task you found most stressful:", ["Sentence Rephrasing", "Report Writing", "Python Code"])
-
-    st.write("Which task did you find least stressful?")
-    least_stressful_task = st.selectbox("Choose the task you found least stressful:", ["Sentence Rephrasing", "Report Writing", "Python Code"])
-
-    # Possible reasons for stress
-    st.write("What do you think are the reasons for your stress? (Select all that apply)")
-    stress_reasons = st.multiselect(
-        "Select reasons for your stress:",
-        ["Lack of Experience", "Time Constraints", "Workload", "Lack of Resources", "External Pressures", 
-         "Unclear Instructions", "Personal Life Stress", "Health Issues", "Lack of Breaks", 
-         "Communication Issues", "Perfectionism"]
-    )
-
-    # Feedback on deadlines
-    st.write("What has your experience been with deadlines in your daily life? Do you find them motivating, or do they cause significant stress?")
-    deadline_experience = st.text_area("Share your thoughts on deadlines:")
-
-    # Additional feedback
-    additional_feedback = st.text_area("Additional feedback:")
-
-    # Timestamp for feedback
-    timestamp = datetime.datetime.now().strftime("%B %d, %Y - %I:%M %p")
-
-    # Submit feedback button
-    if st.button("Submit Feedback"):
-        try:
-            os.makedirs(f"data/Feedback/", exist_ok=True)
-
-            with open(f"data/Feedback/feedback_{timestamp}.txt", "a") as f:
-                f.write(f"Timestamp: {timestamp}\n")
-                f.write(f"Stress Level: {stress_level}\n")
-                f.write(f"Most Stressful Task: {most_stressful_task}\n")
-                f.write(f"Least Stressful Task: {least_stressful_task}\n")
-                f.write(f"Reasons for Stress: {', '.join(stress_reasons)}\n")
-                if deadline_experience:
-                    f.write(f"Experience with Deadlines: {deadline_experience}\n")
-                if additional_feedback:
-                    f.write(f"Additional Feedback: {additional_feedback}\n")
-                f.write("=" * 50 + "\n")
-            st.success("Thank you for your feedback!")
-        except Exception as e:
-            st.error(f"Failed to save feedback: {e}")
-# Main Function
 def time_constraint_task():
     st.title("Time-Constrained Tasks")
     st.write("""

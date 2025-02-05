@@ -5,6 +5,7 @@ import uuid
 from streamlit_autorefresh import st_autorefresh
 from tasks.tracking import start_tracking, stop_tracking
 from tasks.time_constraint import save_results
+from tasks.tracking import collect_feedback
 
 
 def combination_task():
@@ -110,4 +111,14 @@ def combination_task():
             st.session_state.task_started = False  # Stop task
             stop_tracking("Task 5: Combination Task")
             save_results("Task 5: Combination Task",email_draft)
+
+
+
+def run_combination_tasks():
+    combination_task()
+     
+    st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)  # Adding extra space
+    st.markdown("<hr>", unsafe_allow_html=True)  # Horizontal lin
+    collect_feedback()
+
 

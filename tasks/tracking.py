@@ -6,6 +6,7 @@ import numpy as np
 import datetime
 from pynput import mouse, keyboard
 import dlib
+import streamlit as st
 
 import csv
 
@@ -515,3 +516,73 @@ def calculate_head_pose_old(image_points, frame):
     if success:
         return rotation_vector.flatten()  # Pitch, yaw, roll
     return "Pose estimation failed"
+
+
+
+
+def collect_feedback():
+    st.subheader("Stress Level Feedback")
+
+    # NASA TLX Factors (1-100 scale)
+    st.write("Please rate the following workload factors (1-100):")
+    mental_demand = st.slider("Mental Demand", 1, 100, 50)
+    physical_demand = st.slider("Physical Demand", 1, 100, 50)
+    temporal_demand = st.slider("Temporal Demand", 1, 100, 50)
+    performance = st.slider("Performance (Higher is Better)", 1, 100, 50)
+    effort = st.slider("Effort", 1, 100, 50)
+    frustration = st.slider("Frustration", 1, 100, 50)
+
+    # NASA TLX Score Calculation
+    nasa_tlx = (mental_demand + physical_demand + temporal_demand + 
+                (100 - performance) + effort + frustration) / 6
+
+    # Stress level selection
+    stress_level = st.radio("Select your stress level:", ["Low Stress", "Medium Stress", "High Load", "Burnout"])
+
+    # Most and least stressful task questions
+    most_stressful_task = st.selectbox("Choose the task you found most stressful:", 
+                                       ["Sentence Rephrasing", "Report Writing", "Python Code"])
+    least_stressful_task = st.selectbox("Choose the task you found least stressful:", 
+                                        ["Sentence Rephrasing", "Report Writing", "Python Code"])
+
+    # Reasons for stress
+    stress_reasons = ", ".join(st.multiselect(
+        "Select reasons for your stress:",
+        ["Lack of Experience", "Time Constraints", "Workload", "Lack of Resources", "External Pressures", 
+         "Unclear Instructions", "Personal Life Stress", "Health Issues", "Lack of Breaks", 
+         "Communication Issues", "Perfectionism"]
+    ))
+
+    # Deadline experience & additional feedback
+    deadline_experience = st.text_area("Share your thoughts on deadlines:")
+    additional_feedback = st.text_area("Additional feedback:")
+
+    # Timestamp
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Submit feedback button
+    if st.button("Submit Feedback"):
+        file_path = "data/feedback_data.csv"
+        os.makedirs("data", exist_ok=True)
+
+        # Check if the file exists and needs headers
+        file_exists = os.path.isfile(file_path)
+
+        # Open CSV file in append mode
+        with open(file_path, mode="a", newline="") as file:
+            writer = csv.writer(file)
+
+            # Write headers if file does not exist
+            if not file_exists:
+                writer.writerow(["Timestamp", "Stress Level", "Most Stressful Task", "Least Stressful Task", 
+                                 "Reasons for Stress", "Deadline Experience", "Additional Feedback",
+                                 "Mental Demand", "Physical Demand", "Temporal Demand", "Performance", 
+                                 "Effort", "Frustration", "NASA TLX Score"])
+
+            # Write the data row
+            writer.writerow([timestamp, stress_level, most_stressful_task, least_stressful_task, 
+                             stress_reasons, deadline_experience, additional_feedback, 
+                             mental_demand, physical_demand, temporal_demand, performance, 
+                             effort, frustration, round(nasa_tlx, 2)])
+
+        st.success(f"Thank you for your feedback! NASA TLX Score: {nasa_tlx:.2f}")

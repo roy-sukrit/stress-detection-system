@@ -10,6 +10,7 @@ from streamlit_autorefresh import st_autorefresh
 
 from tasks.time_constraint import save_results
 from tasks.tracking import start_tracking, stop_tracking
+from tasks.tracking import collect_feedback
 
 # Helper function to save results
 def save_results(task_name, user_input, correct_answer=None):
@@ -124,4 +125,7 @@ def interruption_task():
 def run_all_tasks():
     st.title("Interactive Tasks with Time Constraints")
     interruption_task()
- 
+     
+    st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)  # Adding extra space
+    st.markdown("<hr>", unsafe_allow_html=True)  # Horizontal lin
+    collect_feedback()
