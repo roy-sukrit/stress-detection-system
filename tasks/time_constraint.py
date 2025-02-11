@@ -1,7 +1,7 @@
 import streamlit as st
 import time
 import os
-from tasks.tracking import start_tracking, stop_tracking
+from tracking.tracking import start_tracking, stop_tracking
 from streamlit_ace import st_ace
 import datetime
 from streamlit_sortables import sort_items
@@ -9,7 +9,12 @@ import random
 from streamlit_autorefresh import st_autorefresh
 import csv
 import datetime
-from tasks.tracking import collect_feedback
+from tracking.tracking import collect_feedback
+from dotenv import load_dotenv
+
+import os
+
+
 # Helper function to clear old results
 def clear_old_results():
     for key in list(st.session_state.keys()):
@@ -77,7 +82,7 @@ def run_task_with_timer(task_name, task_description, task_logic, time_limit=10):
             task_logic()
             st.session_state[task_key] = False
 
-def word_rephrase_task():
+def word_rephrase_task(TIME_CONSTRAINT_TIMER):
     task_name = "Task 1: Word Unscramble Task"
     task_description = "Unscramble the following words to form correct words:"
     
@@ -91,13 +96,19 @@ def word_rephrase_task():
 
     st.subheader(task_name)
     st.write(task_description)
+    st.image(random.choice(gifPaths()), caption="Keep Going! 😂")
 
     user_answers = {}
     
     # User input for unscrambling words
     for scrambled_word in word_pairs.keys():
-        user_answers[scrambled_word] = st.text_input(f"Unscramble: `{scrambled_word}`", key=scrambled_word)
-
+        st.markdown(
+        f"<p style='font-size:18px; font-weight:bold; color:#333;'>Unscramble: "
+        f"<span style='color:#d63384; border: 2px solid #d63384; padding: 2px 6px; border-radius: 5px;'>{scrambled_word}</span></p>", 
+        unsafe_allow_html=True
+    )
+        user_answers[scrambled_word] = st.text_input("", key=scrambled_word)
+        
     def logic():
         correct_count = 0
         st.write("### Results:")
@@ -117,11 +128,11 @@ def word_rephrase_task():
         save_results(task_name, user_answers, word_pairs)
 
     # Start the task and run with a timer
-    run_task_with_timer(task_name, task_description, logic)
+    run_task_with_timer(task_name, task_description, logic,TIME_CONSTRAINT_TIMER)
 
 
 # Task 3: Report Writing Task
-def report_writing_task():
+def report_writing_task(TIME_CONSTRAINT_TIMER):
     task_name = "Task 3: Report Writing Task"
     task_description = """
     Write a short report on the Mexican War of 1846. Be concise and focus on the main events.
@@ -129,6 +140,7 @@ def report_writing_task():
     
     st.subheader(f"{task_name}")
     st.write(task_description)
+    st.image(random.choice(gifPaths()), caption="Keep Going! 😂")
 
     user_input = st.text_area("Write your report here:")
 
@@ -137,11 +149,11 @@ def report_writing_task():
         st.write(user_input)
         save_results(task_name, user_input)
 
-    run_task_with_timer(task_name, task_description, logic, time_limit=10)
+    run_task_with_timer(task_name, task_description, logic, TIME_CONSTRAINT_TIMER)
     
  
 # Task 2: Sentence Reorder Task
-def sentence_rephrase_task():
+def sentence_rephrase_task(TIME_CONSTRAINT_TIMER):
     task_name = "Task 2: Sentence Rephrase Task"
     task_description = "Drag and drop the sentences to arrange them in the correct order."
 
@@ -162,6 +174,7 @@ def sentence_rephrase_task():
     # Task description and instructions
     st.subheader(task_name)
     st.write(task_description)
+    st.image(random.choice(gifPaths()), caption="Keep Going! 😂")
 
     # Display sentences with selectable options for reordering
     st.write("### Arrange the sentences in the correct order:")
@@ -193,18 +206,27 @@ def sentence_rephrase_task():
         st.write(f"### Final Score: {correct_count} / {len(correct_order)}")
 
     # Trigger the timer and handle task completion logic
-    run_task_with_timer(task_name, task_description, logic)
+    run_task_with_timer(task_name, task_description, logic,TIME_CONSTRAINT_TIMER)
+
+
+def gifPaths():
+    filePath = os.getcwd()
+    files = [filePath + '/gifs/' + file for file in os.listdir(filePath + '/gifs/')]
+    return files
 
 def time_constraint_task():
+    load_dotenv()
+
+    TIME_CONSTRAINT_TIMER = os.getenv("TIME_CONSTRAINT_TIMER")
     st.title("Time-Constrained Tasks")
     st.write("""
     Welcome to the time-constrained tasks! Complete the following activities within their respective time limits. 
     Your performance and stress levels will be recorded.
     """)
 
-    word_rephrase_task()
-    sentence_rephrase_task()
-    report_writing_task()
+    word_rephrase_task(TIME_CONSTRAINT_TIMER)
+    sentence_rephrase_task(TIME_CONSTRAINT_TIMER)
+    report_writing_task(TIME_CONSTRAINT_TIMER)
     
     st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)  # Adding extra space
     st.markdown("<hr>", unsafe_allow_html=True)  # Horizontal lin

@@ -1,14 +1,15 @@
+import os
+from dotenv import load_dotenv
 import streamlit as st
 import random
 import time
 import uuid
 from streamlit_autorefresh import st_autorefresh
-from tasks.tracking import start_tracking, stop_tracking
-from tasks.time_constraint import save_results
-from tasks.tracking import collect_feedback
+from tracking.tracking import start_tracking, stop_tracking
+from tasks.time_constraint import gifPaths, save_results
+from tracking.tracking import collect_feedback
 
-
-def combination_task():
+def combination_task(VIDEO_COMBINATION,COMBINATION_TIMER):
     """Task combining a timer and interruptions while writing an email based on a video."""
 
     # Initialize session state variables
@@ -17,7 +18,7 @@ def combination_task():
     if "last_interrupt_time" not in st.session_state:
         st.session_state.last_interrupt_time = time.time()
     if "interrupt_interval" not in st.session_state:
-        st.session_state.interrupt_interval = random.randint(5, 10)  # Random interval (5-10 sec)
+        st.session_state.interrupt_interval = random.randint(0,int(COMBINATION_TIMER))  # Random interval (5-10 sec)
     if "interrupt" not in st.session_state:
         st.session_state.interrupt = False
     if "audio_file" not in st.session_state:
@@ -34,15 +35,24 @@ def combination_task():
     st.title("Timed Email Writing Task with Interruptions")
 
     # Step 1: Play Video
-    st.video("https://www.youtube.com/watch?v=P6FORpg0KVo")
+    
+     
+    if VIDEO_COMBINATION:
+     st.video(f"{VIDEO_COMBINATION}")  
+    else:
+     st.warning("Loading video... ")
+    
+    
+    
+   
     st.write("**Watch the video and write a professional email about how Duolingo uses methods like gamification, streaks, notifications, etc., which can be used in your company.**")
     st.write("🔔 **You will face random interruptions while writing!**")
 
     # Step 2: Define multiple audio interruptions
     interruption_files = [
-        "tasks/music/crowd-clapping.mp3",
-        "tasks/music/crowd-murmuring.mp3",
-        "tasks/music/crowd-noise.mp3",    ]
+        "music/crowd-clapping.mp3",
+        "music/crowd-murmuring.mp3",
+        "music/crowd-noise.mp3",    ]
 
     # Step 3: Start Task Button
     if not st.session_state.task_started:
@@ -76,7 +86,9 @@ def combination_task():
         value=st.session_state.email_draft,
         key="email_draft",
         height=250,
-        help="Make sure to include a professional greeting, the body, and a conclusion."
+        help="Make sure to include a professional greeting, the body, and a conclusion.",
+            label_visibility="hidden"  # ✅ Proper way to hide labels
+
     )
 
     st.write("**Structure Suggestions**:")
@@ -84,6 +96,7 @@ def combination_task():
     st.write("2. **Body:** Discuss how Duolingo uses gamification, streaks, notifications, etc.")
     st.write("3. **Closing:** End with a formal closing like 'Sincerely,' followed by your name.")
     st.write("🔑 **Remember:** The email should have a clear flow from greeting to body to closing.")
+
 
     # Step 6: Handle Interruptions
     if st.session_state.task_started and st.session_state.time_remaining > 0:
@@ -114,11 +127,16 @@ def combination_task():
 
 
 
-def run_combination_tasks():
-    combination_task()
-     
+def run_combination_tasks(VIDEO_COMBINATION):
+    load_dotenv()
+
+    COMBINATION_TIMER = os.getenv("COMBINATION_TIMER")
+
+    combination_task(VIDEO_COMBINATION,COMBINATION_TIMER)
+
     st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)  # Adding extra space
     st.markdown("<hr>", unsafe_allow_html=True)  # Horizontal lin
+
     collect_feedback()
 
 

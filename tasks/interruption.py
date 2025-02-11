@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 import streamlit as st
 import time
 import os
@@ -9,8 +10,9 @@ from PIL import Image
 from streamlit_autorefresh import st_autorefresh
 
 from tasks.time_constraint import save_results
-from tasks.tracking import start_tracking, stop_tracking
-from tasks.tracking import collect_feedback
+from tracking.tracking import start_tracking, stop_tracking
+from tracking.tracking import collect_feedback
+
 
 # Helper function to save results
 def save_results(task_name, user_input, correct_answer=None):
@@ -31,7 +33,7 @@ def save_results(task_name, user_input, correct_answer=None):
 
 
 # Function to simulate interruptions based on a random timer
-def interruption_task():
+def interruption_task(VIDEO_INTERRUPTIONS,INTERRUPTIONS_TIMER):
     """Handles stress detection task with interruptions."""
 
     # Initialize session state variables
@@ -40,7 +42,7 @@ def interruption_task():
     if "last_interrupt_time" not in st.session_state:
         st.session_state.last_interrupt_time = time.time()
     if "interrupt_interval" not in st.session_state:
-        st.session_state.interrupt_interval = random.randint(5, 10)  # Random interval (5-10 sec)
+        st.session_state.interrupt_interval = random.randint(0,int(INTERRUPTIONS_TIMER))  # Random interval (5-10 sec)
     if "interrupt" not in st.session_state:
         st.session_state.interrupt = False
     if "answers" not in st.session_state:
@@ -53,7 +55,15 @@ def interruption_task():
     st.title("Interruption-Based Task")
 
     # Step 1: Play Video
-    st.video("https://www.youtube.com/watch?v=Nz9eAaXRzGg")
+    
+    if VIDEO_INTERRUPTIONS:
+       st.video(VIDEO_INTERRUPTIONS)
+    else:
+     st.warning("Loading video... ")
+    
+    
+    
+
     st.write("**Watch the video and answer the questions. Interruptions will occur!**")
 
     # Step 2: Define questions
@@ -64,9 +74,9 @@ def interruption_task():
     ]
     
     interruption_files = [
-        "tasks/music/crowd-clapping.mp3",
-        "tasks/music/crowd-murmuring.mp3",
-        "tasks/music/crowd-noise.mp3",
+        "music/crowd-clapping.mp3",
+        "music/crowd-murmuring.mp3",
+        "music/crowd-noise.mp3",
     ]
 
 
@@ -122,9 +132,11 @@ def interruption_task():
 
 
 
-def run_all_tasks():
-    st.title("Interactive Tasks with Time Constraints")
-    interruption_task()
+def run_all_tasks(VIDEO_INTERRUPTIONS):
+    load_dotenv()
+
+    INTERRUPTIONS_TIMER = os.getenv("INTERRUPTIONS_TIMER")
+    interruption_task(VIDEO_INTERRUPTIONS,INTERRUPTIONS_TIMER)
      
     st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)  # Adding extra space
     st.markdown("<hr>", unsafe_allow_html=True)  # Horizontal lin

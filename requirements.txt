@@ -3,3 +3,4 @@ opencv-python
 numpy
 pynput
 streamlit_autorefresh
+python-dotenv
