@@ -4,3 +4,4 @@ numpy
 pynput
 streamlit_autorefresh
 python-dotenv
+dlib                                 
