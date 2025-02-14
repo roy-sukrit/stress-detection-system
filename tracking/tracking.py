@@ -281,7 +281,7 @@ def gaze_tracking(filename):
     webcam.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    face_landmark_model = "/Users/src/Sukrit_Development/stress-analysis/tasks/shape_predictor_68_face_landmarks.dat"  # Path to dlib's landmark model
+    face_landmark_model = os.getcwd()+"/tasks/shape_predictor_68_face_landmarks.dat"  # Path to dlib's landmark model
     predictor = dlib.shape_predictor(face_landmark_model)
     detector = dlib.get_frontal_face_detector()
 

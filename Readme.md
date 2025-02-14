@@ -22,7 +22,7 @@ Ensure you have the following installed:
 - Python 3.7 or higher
 - Pip (Python package manager)
 - <a link='http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2'>shape_predictor_68_face_landmarks.dat </a>
-
+- <a link ='https://cmake.org/download/'> Cmake </a>
 ### Installation Steps
 1. Clone this repository:
    ```bash
@@ -31,7 +31,9 @@ Ensure you have the following installed:
 
    2. Download :shape_predictor_68_face_landmarks.dat in tasks/
 
-   3. Setup a Virtual Env:
+   3. Download Cmake
+
+   4. Setup a Virtual Env:
       python -m venv venv  
       source venv/bin/activate  
 🚀 Usage
