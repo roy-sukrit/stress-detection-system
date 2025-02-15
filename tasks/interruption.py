@@ -140,4 +140,4 @@ def run_all_tasks(VIDEO_INTERRUPTIONS):
      
     st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)  # Adding extra space
     st.markdown("<hr>", unsafe_allow_html=True)  # Horizontal lin
-    collect_feedback()
+    collect_feedback("Interruptions Task")

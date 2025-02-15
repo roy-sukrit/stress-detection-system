@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 import os
 
 
+
 # Helper function to clear old results
 def clear_old_results():
     for key in list(st.session_state.keys()):
@@ -224,10 +225,10 @@ def time_constraint_task():
     Your performance and stress levels will be recorded.
     """)
 
-    word_rephrase_task(TIME_CONSTRAINT_TIMER)
-    sentence_rephrase_task(TIME_CONSTRAINT_TIMER)
-    report_writing_task(TIME_CONSTRAINT_TIMER)
+    word_rephrase_task(int(TIME_CONSTRAINT_TIMER))
+    sentence_rephrase_task(int(TIME_CONSTRAINT_TIMER))
+    report_writing_task(int(TIME_CONSTRAINT_TIMER))
     
     st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)  # Adding extra space
     st.markdown("<hr>", unsafe_allow_html=True)  # Horizontal lin
-    collect_feedback()
+    collect_feedback(task_name="TimeConstraint")

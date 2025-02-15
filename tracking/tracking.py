@@ -17,6 +17,22 @@ mouse_listener = None
 keyboard_listener = None
 gaze_thread = None
 session_filename = None
+import uuid
+
+def generate_participant_id():
+    """
+    Generates a unique participant ID for data anonymization.
+    
+    Args:
+        existing_ids (set): A set of already generated IDs to ensure uniqueness.
+    
+    Returns:
+        str: A unique participant ID.
+    """
+   
+    unique_participant_id = f"PT-{uuid.uuid4().hex[:6].upper()}"  # e.g., PT-A1B2C3
+    return unique_participant_id
+
 
 
 
@@ -37,15 +53,16 @@ def log_to_csv(filename, data):
         
         # Write headers if the file is new
         if not file_exists:
-            writer.writerow(["Timestamp", "Name","Event Details"])
+            writer.writerow(["Participant Id","Timestamp", "Name","Event Details"])
         
         writer.writerow(data)
 
 # Tracking Method
 def start_tracking(task_name):
-    global session_filename, gaze_thread
+    global session_filename, gaze_thread,participantId
     with lock:  # Synchronize access to shared variables
         timestamp = datetime.datetime.now().strftime("%B %d, %Y - %I:%M %p")
+        participantId =generate_participant_id()
         session_filename = f"data/{task_name}/U_data_{timestamp}.txt"
         print(f"Starting tracking... Data will be saved to {session_filename}")
 
@@ -92,8 +109,8 @@ def log_to_file(filename,name, message):
     if not os.path.exists(directory):
         os.makedirs(directory, exist_ok=True)
     with open(filename, "a") as f:
-        f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {name} , {message}\n")
-    log_to_csv(filename, [time.strftime('%Y-%m-%d %H:%M:%S'),name, message.split(":")[0], message.split(":")[1] if ":" in message else ""])        
+        f.write(f"{participantId},{time.strftime('%Y-%m-%d %H:%M:%S')} - {name} , {message}\n")
+    log_to_csv(filename, [participantId,time.strftime('%Y-%m-%d %H:%M:%S'),name, message.split(":")[0], message.split(":")[1] if ":" in message else ""])        
         
 
 def start_new_session(filename,task_name):
@@ -520,7 +537,7 @@ def calculate_head_pose_old(image_points, frame):
 
 
 
-def collect_feedback():
+def collect_feedback(task_name):
     st.subheader("Stress Level Feedback")
 
     # NASA TLX Factors (1-100 scale)
@@ -562,11 +579,15 @@ def collect_feedback():
 
     # Submit feedback button
     if st.button("Submit Feedback"):
-        file_path = "data/feedback_data.csv"
-        os.makedirs("data", exist_ok=True)
+        file_path = f"data/Feedback/{task_name}/feedback_data_{participantId}.csv"
 
         # Check if the file exists and needs headers
+           # Ensure the directory structure exists
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+        # Check if the file exists
         file_exists = os.path.isfile(file_path)
+        
 
         # Open CSV file in append mode
         with open(file_path, mode="a", newline="") as file:
@@ -574,13 +595,13 @@ def collect_feedback():
 
             # Write headers if file does not exist
             if not file_exists:
-                writer.writerow(["Timestamp", "Stress Level", "Most Stressful Task", "Least Stressful Task", 
+                writer.writerow(["Participant Id","Timestamp", "Stress Level", "Most Stressful Task", "Least Stressful Task", 
                                  "Reasons for Stress", "Deadline Experience", "Additional Feedback",
                                  "Mental Demand", "Physical Demand", "Temporal Demand", "Performance", 
                                  "Effort", "Frustration", "NASA TLX Score"])
 
             # Write the data row
-            writer.writerow([timestamp, stress_level, most_stressful_task, least_stressful_task, 
+            writer.writerow([participantId,timestamp, stress_level, most_stressful_task, least_stressful_task, 
                              stress_reasons, deadline_experience, additional_feedback, 
                              mental_demand, physical_demand, temporal_demand, performance, 
                              effort, frustration, round(nasa_tlx, 2)])
