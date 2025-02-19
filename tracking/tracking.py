@@ -538,41 +538,53 @@ def calculate_head_pose_old(image_points, frame):
 
 
 def collect_feedback(task_name):
-    st.subheader("Stress Level Feedback")
+    st.subheader("Workload & Stress Feedback")
 
-    # NASA TLX Factors (1-100 scale)
-    st.write("Please rate the following workload factors (1-100):")
-    mental_demand = st.slider("Mental Demand", 1, 100, 50)
-    physical_demand = st.slider("Physical Demand", 1, 100, 50)
-    temporal_demand = st.slider("Temporal Demand", 1, 100, 50)
-    performance = st.slider("Performance (Higher is Better)", 1, 100, 50)
-    effort = st.slider("Effort", 1, 100, 50)
-    frustration = st.slider("Frustration", 1, 100, 50)
+    # NASA TLX Factors (1-5 scale, user-friendly labels)
+    st.write("Rate the following aspects of your experience (1 = Very Low, 5 = Very High):")
+    mental_demand = st.slider("How mentally exhausting was the task?", 1, 5, 3)
+    physical_demand = st.slider("How physically tiring was the task?", 1, 5, 3)
+    temporal_demand = st.slider("How rushed did you feel?", 1, 5, 3)
+    performance = st.slider("How well do you think you performed? (Higher is better)", 1, 5, 3)
+    effort = st.slider("How hard did you have to work?", 1, 5, 3)
+    frustration = st.slider("How frustrated did you feel?", 1, 5, 3)
 
-    # NASA TLX Score Calculation
+    # NASA TLX Score Calculation (now based on 1-5 scale)
     nasa_tlx = (mental_demand + physical_demand + temporal_demand + 
-                (100 - performance) + effort + frustration) / 6
+                (5 - performance) + effort + frustration) / 6
 
-    # Stress level selection
-    stress_level = st.radio("Select your stress level:", ["Low Stress", "Medium Stress", "High Load", "Burnout"])
 
-    # Most and least stressful task questions
-    most_stressful_task = st.selectbox("Choose the task you found most stressful:", 
-                                       ["Sentence Rephrasing", "Report Writing", "Python Code"])
-    least_stressful_task = st.selectbox("Choose the task you found least stressful:", 
-                                        ["Sentence Rephrasing", "Report Writing", "Python Code"])
+    # Unique follow-up questions based on the task
+    if task_name == "Rest Tasks":
+        most_stressful_part = st.text_area("What part of this task was the hardest?")
+        concentration_level = st.slider("How focused did you feel?", 1, 5, 3)
 
-    # Reasons for stress
+    elif task_name == "TimeConstraint":
+        time_pressure = st.slider("How much did the time constraint affect your performance?", 1, 5, 3)
+        if time_pressure >= 4:
+            st.write("It seems the timer added pressure. Any suggestions to make it fairer?")
+            time_feedback = st.text_area("Your thoughts on the time limit:")
+    
+    elif task_name == "Interruptions Task":
+        interruptions_impact = st.slider("How much did the interruptions affect you?", 1, 5, 3)
+        if interruptions_impact >= 4:
+            st.write("It looks like interruptions were a major issue. Can you describe what made it difficult?")
+            interruption_feedback = st.text_area("Your experience with interruptions:")
+
+    elif task_name == "Combination Task":
+        multitasking_difficulty = st.slider("How difficult was it to manage both the timer and interruptions?", 1, 5, 3)
+        focus_loss = st.slider("How often did you lose focus due to interruptions?", 1, 5, 3)
+
+    # General stress-related questions
     stress_reasons = ", ".join(st.multiselect(
-        "Select reasons for your stress:",
-        ["Lack of Experience", "Time Constraints", "Workload", "Lack of Resources", "External Pressures", 
-         "Unclear Instructions", "Personal Life Stress", "Health Issues", "Lack of Breaks", 
-         "Communication Issues", "Perfectionism"]
+        "What contributed to your stress?",
+        ["Lack of Experience", "Time Pressure", "Interruptions", "Unclear Instructions", "Too Many Tasks at Once", 
+         "Noise/Distractions", "Lack of Breaks", "Fatigue", "Personal Life Stress"]
     ))
 
     # Deadline experience & additional feedback
-    deadline_experience = st.text_area("Share your thoughts on deadlines:")
-    additional_feedback = st.text_area("Additional feedback:")
+    # deadline_experience = st.text_area("How do you generally feel about deadlines?")
+    additional_feedback = st.text_area("Any other feedback or suggestions?")
 
     # Timestamp
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -581,29 +593,49 @@ def collect_feedback(task_name):
     if st.button("Submit Feedback"):
         file_path = f"data/Feedback/{task_name}/feedback_data_{participantId}.csv"
 
-        # Check if the file exists and needs headers
-           # Ensure the directory structure exists
+        # Ensure directory exists
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-        # Check if the file exists
+        # Check if file exists (to add headers if needed)
         file_exists = os.path.isfile(file_path)
-        
 
-        # Open CSV file in append mode
+        # Open CSV file and append data
         with open(file_path, mode="a", newline="") as file:
             writer = csv.writer(file)
 
-            # Write headers if file does not exist
+            # Write headers if the file is new
             if not file_exists:
-                writer.writerow(["Participant Id","Timestamp", "Stress Level", "Most Stressful Task", "Least Stressful Task", 
-                                 "Reasons for Stress", "Deadline Experience", "Additional Feedback",
-                                 "Mental Demand", "Physical Demand", "Temporal Demand", "Performance", 
-                                 "Effort", "Frustration", "NASA TLX Score"])
+                writer.writerow(["Participant Id", "Timestamp",
+                                 "Mental Demand", "Physical Demand", "Temporal Demand", 
+                                 "Performance", "Effort", "Frustration", "NASA TLX Score",
+                                 "Stress Reasons", "Additional Feedback"])
 
-            # Write the data row
-            writer.writerow([participantId,timestamp, stress_level, most_stressful_task, least_stressful_task, 
-                             stress_reasons, deadline_experience, additional_feedback, 
-                             mental_demand, physical_demand, temporal_demand, performance, 
-                             effort, frustration, round(nasa_tlx, 2)])
+            # Store common data
+            feedback_data = [participantId, timestamp, 
+                             mental_demand, physical_demand, temporal_demand, 
+                             performance, effort, frustration, round(nasa_tlx, 2), 
+                             stress_reasons, additional_feedback]
+
+            # Add task-specific data
+            if task_name == "Task with No Timer or Interruptions":
+                feedback_data.append(most_stressful_part)
+                feedback_data.append(concentration_level)
+
+            elif task_name == "Task with Timer":
+                feedback_data.append(time_pressure)
+                if time_pressure >= 4:
+                    feedback_data.append(time_feedback)
+
+            elif task_name == "Task with Interruptions":
+                feedback_data.append(interruptions_impact)
+                if interruptions_impact >= 4:
+                    feedback_data.append(interruption_feedback)
+
+            elif task_name == "Task with Timer and Interruptions":
+                feedback_data.append(multitasking_difficulty)
+                feedback_data.append(focus_loss)
+
+            # Write the feedback data row
+            writer.writerow(feedback_data)
 
         st.success(f"Thank you for your feedback! NASA TLX Score: {nasa_tlx:.2f}")

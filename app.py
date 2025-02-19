@@ -3,6 +3,7 @@ import streamlit as st
 from tasks.time_constraint import gifPaths, time_constraint_task
 from tasks.interruption import run_all_tasks
 from tasks.combination import run_combination_tasks
+from tasks.rest import spot_the_mistake_wrapper
 from dotenv import load_dotenv
 import os
 
@@ -25,9 +26,11 @@ if not form_completed:
 else:
     task_type = st.sidebar.selectbox(
         "Select Task Type", 
-        ["Time Constraint", "Interruption", "Combination"]
+        ["Time Constraint", "Interruption", "Combination","No Stressor"]
     )
 
+  
+   
     if task_type == "Time Constraint":
         time_constraint_task()
     elif task_type == "Interruption":
@@ -36,3 +39,6 @@ else:
         st.sidebar.image(random.choice(gifPaths()), caption="Keep Going! 😂")
         run_combination_tasks(VIDEO_COMBINATION)
         st.sidebar.image(random.choice(gifPaths()), caption="Keep Going! 😂")
+        
+    elif task_type =="No Stressor":
+        spot_the_mistake_wrapper()    
