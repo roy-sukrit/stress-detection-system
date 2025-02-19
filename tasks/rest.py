@@ -75,7 +75,7 @@ def spot_the_differences_task():
     task_description = "Find the number of differences between the 2 images."
     
     image_paths = [
-        os.getcwd() + "/spot_1.jpg",
+        os.getcwd() + "/images/spot_1.jpg",
 
     ]
     
@@ -90,7 +90,7 @@ def find_whats_missing_task():
     task_description = "Can you find out what is missing?"
 
     image_paths = [
-        os.getcwd() + "/spot_2.jpg",
+        os.getcwd() + "/images/spot_2.jpg",
     ]
     
     correct_answers = ["shadow"]  # Example missing objects

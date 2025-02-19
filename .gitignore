@@ -9,6 +9,7 @@ lbfmodel.yaml
 temp_code_*
 data/*
 music/*
+images/*
 gifs/*
 .qodo
 .env
