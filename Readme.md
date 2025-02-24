@@ -3,6 +3,8 @@
 
 This project combines gaze tracking using a webcam and different types of tasks to assess cognitive behaviors and stress levels. It utilizes OpenCV for gaze tracking, Streamlit for the web interface, and logging for data collection and analysis.
 
+![alt text](demo-video.gif)
+
 ---
 
 ## 📜 Features
