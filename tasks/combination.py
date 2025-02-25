@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 import streamlit as st
 import random
 import time
-import uuid
 from streamlit_autorefresh import st_autorefresh
 from tracking.tracking import start_tracking, stop_tracking
 from tasks.time_constraint import gifPaths, save_results

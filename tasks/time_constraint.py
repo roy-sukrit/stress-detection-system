@@ -136,11 +136,12 @@ def word_rephrase_task(TIME_CONSTRAINT_TIMER):
 def report_writing_task(TIME_CONSTRAINT_TIMER):
     task_name = "Task 3: Report Writing Task"
     task_description = """
-    Write a short report on the Mexican War of 1846. Be concise and focus on the main events.
+    Write a short report on the Mexican War of 1846. Be concise and focus on the main events .
     """
     
     st.subheader(f"{task_name}")
     st.write(task_description)
+    st.write('Max words - 150.')
     st.image(random.choice(gifPaths()), caption="Keep Going! 😂")
 
     user_input = st.text_area("Write your report here:")
@@ -210,10 +211,32 @@ def sentence_rephrase_task(TIME_CONSTRAINT_TIMER):
     run_task_with_timer(task_name, task_description, logic,TIME_CONSTRAINT_TIMER)
 
 
+
 def gifPaths():
+    # Get the current working directory
     filePath = os.getcwd()
-    files = [filePath + '/gifs/' + file for file in os.listdir(filePath + '/gifs/')]
-    return files
+    
+    # Define the path to the 'gifs' directory
+    gifs_dir = os.path.join(filePath, 'gifs')
+    
+    # Check if the 'gifs' directory exists
+    if not os.path.exists(gifs_dir):
+        raise FileNotFoundError(f"The directory '{gifs_dir}' does not exist.")
+    
+    # Get a list of files in the 'gifs' directory
+    files = os.listdir(gifs_dir)
+    
+    # Filter out non-image files (e.g., only allow .gif, .png, .jpg, etc.)
+    valid_extensions = ['.gif', '.png', '.jpg', '.jpeg']
+    image_files = [file for file in files if os.path.splitext(file)[1].lower() in valid_extensions]
+    
+    # Construct full paths for the image files
+    image_paths = [os.path.join(gifs_dir, file) for file in image_files]
+    
+    # Debugging: Print the list of valid image paths
+    print("Valid image files:", image_paths)
+    
+    return image_paths
 
 def time_constraint_task():
     load_dotenv()
@@ -232,3 +255,5 @@ def time_constraint_task():
     st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)  # Adding extra space
     st.markdown("<hr>", unsafe_allow_html=True)  # Horizontal lin
     collect_feedback(task_name="TimeConstraint")
+    
+    

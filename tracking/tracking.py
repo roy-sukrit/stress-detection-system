@@ -19,6 +19,17 @@ gaze_thread = None
 session_filename = None
 import uuid
 
+
+task_enum = {"Task 1: Word Unscramble Task":"T",
+             "Task 2: Sentence Rephrase Task":"T",
+             "Task 3: Report Writing Task":"T",
+             "Task 4: Interruptions Task":"I",
+             "Task 5: Combination Task":"C",
+             "Task 6: Rest Task":"R"}
+
+def getTaskValue(val):
+    print(task_enum[val])
+    return task_enum[val]
 def generate_participant_id():
     """
     Generates a unique participant ID for data anonymization.
@@ -32,7 +43,6 @@ def generate_participant_id():
    
     unique_participant_id = f"PT-{uuid.uuid4().hex[:6].upper()}"  # e.g., PT-A1B2C3
     return unique_participant_id
-
 
 
 
@@ -53,7 +63,7 @@ def log_to_csv(filename, data):
         
         # Write headers if the file is new
         if not file_exists:
-            writer.writerow(["Participant Id","Timestamp", "Name","Event Details"])
+            writer.writerow(["Participant Id","Condition","Timestamp", "Name","Event Details"])
         
         writer.writerow(data)
 
@@ -70,9 +80,9 @@ def start_tracking(task_name):
     start_new_session(session_filename,task_name)
     
      # Start listeners in separate threads
-    gaze_thread = threading.Thread(target=gaze_tracking, args=(session_filename,))
-    mouse_listener = threading.Thread(target=mouse_tracking, args=(session_filename,))
-    keyboard_listener = threading.Thread(target=keyboard_tracking, args=(session_filename,))
+    gaze_thread = threading.Thread(target=gaze_tracking, args=(session_filename,task_name))
+    mouse_listener = threading.Thread(target=mouse_tracking, args=(session_filename,task_name))
+    keyboard_listener = threading.Thread(target=keyboard_tracking, args=(session_filename,task_name))
     
     gaze_thread.start()
     mouse_listener.start()
@@ -90,7 +100,7 @@ def stop_tracking(task_name):
         if session_active.is_set():
             print(f"Stopping tracking... Final data saved to {session_filename}")
             session_active.clear()
-            end_session(session_filename)
+            end_session(session_filename,task_name)
 
             # Stop mouse and keyboard listeners
             if mouse_listener:
@@ -103,37 +113,37 @@ def stop_tracking(task_name):
         else:
             print("No active session to stop.")
 
-def log_to_file(filename,name, message):
+def log_to_file(filename,name, task_name,message):
     """Helper function to log data to a file."""
     directory = os.path.dirname(filename)
     if not os.path.exists(directory):
         os.makedirs(directory, exist_ok=True)
     with open(filename, "a") as f:
-        f.write(f"{participantId},{time.strftime('%Y-%m-%d %H:%M:%S')} - {name} , {message}\n")
-    log_to_csv(filename, [participantId,time.strftime('%Y-%m-%d %H:%M:%S'),name, message.split(":")[0], message.split(":")[1] if ":" in message else ""])        
+        f.write(f"{participantId},{task_name},{time.strftime('%Y-%m-%d %H:%M:%S')} - {name} , {message}\n")
+    log_to_csv(filename, [participantId,getTaskValue(task_name),time.strftime('%Y-%m-%d %H:%M:%S'),name, message.split(":")[1] if ":" in message else ""])        
         
 
 def start_new_session(filename,task_name):
     """Log the start of a new session."""
     
-    log_to_file(filename,"Session",  f"====== {task_name}======")
+    log_to_file(filename,"Session", task_name, f"====== {task_name}======")
 
-    log_to_file(filename,"Session",  "====== New Session Start ======")
-    log_to_file(filename, "Session", f"Session Start Time: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    log_to_file(filename,"Session", task_name, "====== New Session Start ======")
+    log_to_file(filename, "Session", task_name,f"Session Start Time: {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
-def end_session(filename):
+def end_session(filename,task_name):
     """Log the end of a session."""
-    log_to_file(filename,"Session", f"====== Session End ======")
-    log_to_file(filename, "Session", f"Session End Time: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    log_to_file(filename,"Session",task_name, f"====== Session End ======")
+    log_to_file(filename, "Session",task_name, f"Session End Time: {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
-def mouse_tracking(filename):
+def mouse_tracking(filename,task_name):
     def on_move(x, y):
         if session_active.is_set():
             log_to_file(filename, "Mouse",f"Mouse Move - ({x}, {y})")
 
     def on_click(x, y, button, pressed):
         if session_active.is_set():
-            log_to_file(filename,"Mouse", f"Mouse {'Press' if pressed else 'Release'} - ({x}, {y})")
+            log_to_file(filename,"Mouse", task_name,f"Mouse {'Press' if pressed else 'Release'} - ({x}, {y})")
 
     def on_scroll(x, y, dx, dy):
         if session_active.is_set():
@@ -291,7 +301,7 @@ def analyze_gaze_direction_2(eyes, roi_gray, face_width):
         return "Error in gaze direction analysis"
 # Approach 2 
 
-def gaze_tracking(filename):
+def gaze_tracking(filename,task_name):
     """Tracks gaze direction and head pose using OpenCV, logs results to the file."""
     webcam = cv2.VideoCapture(0)
     webcam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
@@ -303,7 +313,7 @@ def gaze_tracking(filename):
     detector = dlib.get_frontal_face_detector()
 
     if not webcam.isOpened():
-        log_to_file(filename, "Error","Error: Webcam not found!")
+        log_to_file(filename, "Error",task_name,"Error: Webcam not found!")
         print("Error: Webcam not found!")
         return
 
@@ -317,17 +327,21 @@ def gaze_tracking(filename):
 
             gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = detector(gray_frame)
+            # print("faces ---->",faces)
 
             if len(faces) == 0:
-                log_to_file(filename, "Error", "No face detected")
+                log_to_file(filename, "Error",task_name, "No face detected")
                 print("No face detected")
                 continue
 
             for face in faces:
                 #Predicts 68 Landmarks for each face
                 landmarks = predictor(gray_frame, face)
+                # print("landmarks ---->",landmarks)
+
                 
                 face_width = face.right() - face.left()  
+                # print("face_width ---->",face_width)
 
                 # Extract eye regions
                 left_eye = get_eye_region(landmarks, left=True)
@@ -335,17 +349,18 @@ def gaze_tracking(filename):
 
                 # Left and Right into a single list
                 eyes = [left_eye, right_eye]
+                # print("eyes ---->",eyes)
 
                 # Analyze gaze direction
                 gaze_direction = analyze_gaze_direction(eyes, gray_frame, face_width)
                 
-                log_to_file(filename,  "Gaze",f": {gaze_direction}")
+                log_to_file(filename,  "Gaze",task_name,f": {gaze_direction}")
                 print(f"Gaze Direction: {gaze_direction}")
 
                 # Head pose estimation
                 image_points = get_image_points(landmarks)
                 head_pose = calculate_head_pose(image_points, frame)
-                log_to_file(filename, "Head Pose", f": {head_pose}")
+                log_to_file(filename, "Head Pose",task_name, f": {head_pose}")
                 print(f"Head Pose: {head_pose}")
 
             time.sleep(0.5)  # Prevent high CPU usage
@@ -357,7 +372,7 @@ def gaze_tracking(filename):
     finally:
         webcam.release()
         cv2.destroyAllWindows()
-        log_to_file(filename,  "Gaze","Gaze tracking session ended")
+        log_to_file(filename,  "Gaze",task_name,"Gaze tracking session ended")
 
 
 # Helper Functions
@@ -375,11 +390,11 @@ def analyze_gaze_direction(eyes, gray_frame, face_width):
     """Analyzes gaze direction based on eye regions."""
     gaze_directions = []
     for eye in eyes:
-        # Get the bounding box of the eye
+        # Geting the bounding box of the eye
         x_coords = [point[0] for point in eye]
         y_coords = [point[1] for point in eye]
 
-        # Crop the eye region
+        # Croping the eye region
         min_x, max_x = min(x_coords), max(x_coords)
         min_y, max_y = min(y_coords), max(y_coords)
         eye_region = gray_frame[min_y:max_y, min_x:max_x]
@@ -387,17 +402,26 @@ def analyze_gaze_direction(eyes, gray_frame, face_width):
         # Threshold the eye region for binary mask
         _, threshold_eye = cv2.threshold(eye_region, 70, 255, cv2.THRESH_BINARY)
 
-        # Find contours to locate the pupil
+        # Finding contours to locate the pupil
         contours, _ = cv2.findContours(threshold_eye, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        # print("contours ---->",contours)
+        
         if contours:
-            # Find the largest contour assuming it's the pupil
+            # Finding the largest contour assuming it's the pupil
             largest_contour = max(contours, key=cv2.contourArea)
+            # print("largest_contour ---->",largest_contour)
+
             moments = cv2.moments(largest_contour)
+            # print("moments ---->",moments)
+
+            
 
             if moments['m00'] != 0:
-                cx = int(moments['m10'] / moments['m00'])  # Pupil x-coordinate
-                relative_position = cx / (max_x - min_x)  # Normalize position
+                cx = int(moments['m10'] / moments['m00'])  # x-coordinate of pupil
+                # print("cx ---->",cx)
 
+                relative_position = cx / (max_x - min_x)  # Normalizing position
+                # print("relative_position --->",relative_position)
                 # Classify gaze direction
                 if relative_position < 0.4:
                     gaze_directions.append("Left")
@@ -503,6 +527,7 @@ def calculate_head_pose(image_points, frame):
 
 
 def calculate_head_pose_old(image_points, frame):
+    
     """Calculates the head pose using image points and returns pitch, yaw, and roll."""
     # 3D model points
     model_points = np.array([
@@ -535,56 +560,115 @@ def calculate_head_pose_old(image_points, frame):
     return "Pose estimation failed"
 
 
-
-
-def collect_feedback(task_name):
+def collect_feedback_(task_name, participantId='Test'):
     st.subheader("Workload & Stress Feedback")
 
-    # NASA TLX Factors (1-5 scale, user-friendly labels)
-    st.write("Rate the following aspects of your experience (1 = Very Low, 5 = Very High):")
-    mental_demand = st.slider("How mentally exhausting was the task?", 1, 5, 3)
-    physical_demand = st.slider("How physically tiring was the task?", 1, 5, 3)
-    temporal_demand = st.slider("How rushed did you feel?", 1, 5, 3)
-    performance = st.slider("How well do you think you performed? (Higher is better)", 1, 5, 3)
-    effort = st.slider("How hard did you have to work?", 1, 5, 3)
-    frustration = st.slider("How frustrated did you feel?", 1, 5, 3)
+    # Slider range and default
+    s_min, s_max, default_value = 1, 5, 3
 
-    # NASA TLX Score Calculation (now based on 1-5 scale)
+    # Use a versioning system to reset sliders dynamically
+    if "slider_version" not in st.session_state:
+        st.session_state["slider_version"] = 1
+
+    def reset_sliders():
+        """Increments slider version to force Streamlit to reset values."""
+        st.session_state["slider_version"] = 3
+
+    # Sliders (force reset using unique keys)
+    mental_demand = st.slider("How mentally exhausting was the task?", s_min, s_max, default_value, key=f"mental_demand_{st.session_state['slider_version']}")
+    physical_demand = st.slider("How physically tiring was the task?", s_min, s_max, default_value, key=f"physical_demand_{st.session_state['slider_version']}")
+    temporal_demand = st.slider("How rushed did you feel?", s_min, s_max, default_value, key=f"temporal_demand_{st.session_state['slider_version']}")
+    performance = st.slider("How well do you think you performed? (Higher is better)", s_min, s_max, default_value, key=f"performance_{st.session_state['slider_version']}")
+    effort = st.slider("How hard did you have to work?", s_min, s_max, default_value, key=f"effort_{st.session_state['slider_version']}")
+    frustration = st.slider("How frustrated did you feel?", s_min, s_max, default_value, key=f"frustration_{st.session_state['slider_version']}")
+
+    # Calculate NASA TLX Score
     nasa_tlx = (mental_demand + physical_demand + temporal_demand + 
                 (5 - performance) + effort + frustration) / 6
 
+    # Submit feedback button
+    if st.button("Submit Feedback"):
+        # Store feedback (Replace with actual storage logic)
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        file_path = f"data/Feedback/{task_name}/feedback_data_{timestamp}.csv"
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        
+        file_exists = os.path.isfile(file_path)
+        with open(file_path, mode="a", newline="") as file:
+            writer = csv.writer(file)
+            if not file_exists:
+                writer.writerow(["Participant Id", "Timestamp", "Mental Demand", "Physical Demand", "Temporal Demand", 
+                                 "Performance", "Effort", "Frustration", "NASA TLX Score"])
+            writer.writerow([participantId, timestamp, mental_demand, physical_demand, temporal_demand, 
+                             performance, effort, frustration, round(nasa_tlx, 2)])
 
-    # Unique follow-up questions based on the task
+        st.success(f"Thank you for your feedback! NASA TLX Score: {nasa_tlx:.2f}")
+
+        # Reset sliders after submission
+        reset_sliders()
+
+    # Manual Reset Button (optional)
+    st.button("Reset Form", on_click=reset_sliders)
+
+# Call the function
+
+def collect_feedback(task_name, participantId='Test'):
+    st.subheader("Workload & Stress Feedback")
+
+    # Initialize session state for form reset
+    if "slider_version" not in st.session_state:
+        st.session_state["slider_version"] = 3
+
+    def reset_sliders():
+        """Forces slider reset by incrementing version key."""
+        st.session_state["slider_version"] = 3
+
+    # TLX Factors (1-5 scale, user-friendly labels)
+    st.write("Rate the following aspects of your experience (1 = Very Low, 5 = Very High):")
+
+    # Sliders with forced reset
+    mental_demand = st.slider("How mentally exhausting was the task?", 1, 5, 3, key=f"mental_demand_{st.session_state['slider_version']}")
+    physical_demand = st.slider("How physically tiring was the task?", 1, 5, 3, key=f"physical_demand_{st.session_state['slider_version']}")
+    temporal_demand = st.slider("How rushed did you feel?", 1, 5, 3, key=f"temporal_demand_{st.session_state['slider_version']}")
+    performance = st.slider("How well do you think you performed? (Higher is better)", 1, 5, 3, key=f"performance_{st.session_state['slider_version']}")
+    effort = st.slider("How hard did you have to work?", 1, 5, 3, key=f"effort_{st.session_state['slider_version']}")
+    frustration = st.slider("How frustrated did you feel?", 1, 5, 3, key=f"frustration_{st.session_state['slider_version']}")
+
+    # NASA TLX Score Calculation
+    nasa_tlx = (mental_demand + physical_demand + temporal_demand + 
+                (5 - performance) + effort + frustration) / 6
+
+    # Task-Specific Questions
     if task_name == "Rest Tasks":
-        most_stressful_part = st.text_area("What part of this task was the hardest?")
-        concentration_level = st.slider("How focused did you feel?", 1, 5, 3)
+        most_stressful_part = st.text_area("What part of this task was the hardest?", key="most_stressful_part")
+        concentration_level = st.slider("How focused did you feel?", 1, 5, 3, key=f"concentration_level_{st.session_state['slider_version']}")
 
     elif task_name == "TimeConstraint":
-        time_pressure = st.slider("How much did the time constraint affect your performance?", 1, 5, 3)
+        time_pressure = st.slider("How much did the time constraint affect your performance?", 1, 5, 3, key=f"time_pressure_{st.session_state['slider_version']}")
         if time_pressure >= 4:
             st.write("It seems the timer added pressure. Any suggestions to make it fairer?")
-            time_feedback = st.text_area("Your thoughts on the time limit:")
-    
+            time_feedback = st.text_area("Your thoughts on the time limit:", key="time_feedback")
+
     elif task_name == "Interruptions Task":
-        interruptions_impact = st.slider("How much did the interruptions affect you?", 1, 5, 3)
+        interruptions_impact = st.slider("How much did the interruptions affect you?", 1, 5, 3, key=f"interruptions_impact_{st.session_state['slider_version']}")
         if interruptions_impact >= 4:
             st.write("It looks like interruptions were a major issue. Can you describe what made it difficult?")
-            interruption_feedback = st.text_area("Your experience with interruptions:")
+            interruption_feedback = st.text_area("Your experience with interruptions:", key="interruption_feedback")
 
     elif task_name == "Combination Task":
-        multitasking_difficulty = st.slider("How difficult was it to manage both the timer and interruptions?", 1, 5, 3)
-        focus_loss = st.slider("How often did you lose focus due to interruptions?", 1, 5, 3)
+        multitasking_difficulty = st.slider("How difficult was it to manage both the timer and interruptions?", 1, 5, 3, key=f"multitasking_difficulty_{st.session_state['slider_version']}")
+        focus_loss = st.slider("How often did you lose focus due to interruptions?", 1, 5, 3, key=f"focus_loss_{st.session_state['slider_version']}")
 
-    # General stress-related questions
+    # General Stress Contributors
     stress_reasons = ", ".join(st.multiselect(
         "What contributed to your stress?",
         ["Lack of Experience", "Time Pressure", "Interruptions", "Unclear Instructions", "Too Many Tasks at Once", 
-         "Noise/Distractions", "Lack of Breaks", "Fatigue", "Personal Life Stress"]
+         "Noise/Distractions", "Lack of Breaks", "Fatigue", "Personal Life Stress"],
+        key="stress_reasons"
     ))
 
-    # Deadline experience & additional feedback
-    # deadline_experience = st.text_area("How do you generally feel about deadlines?")
-    additional_feedback = st.text_area("Any other feedback or suggestions?")
+    # Additional Feedback
+    additional_feedback = st.text_area("Any other feedback or suggestions?", key="additional_feedback")
 
     # Timestamp
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -617,21 +701,21 @@ def collect_feedback(task_name):
                              stress_reasons, additional_feedback]
 
             # Add task-specific data
-            if task_name == "Task with No Timer or Interruptions":
+            if task_name == "Rest Tasks":
                 feedback_data.append(most_stressful_part)
                 feedback_data.append(concentration_level)
 
-            elif task_name == "Task with Timer":
+            elif task_name == "TimeConstraint":
                 feedback_data.append(time_pressure)
                 if time_pressure >= 4:
                     feedback_data.append(time_feedback)
 
-            elif task_name == "Task with Interruptions":
+            elif task_name == "Interruptions Task":
                 feedback_data.append(interruptions_impact)
                 if interruptions_impact >= 4:
                     feedback_data.append(interruption_feedback)
 
-            elif task_name == "Task with Timer and Interruptions":
+            elif task_name == "Combination Task":
                 feedback_data.append(multitasking_difficulty)
                 feedback_data.append(focus_loss)
 
@@ -639,3 +723,8 @@ def collect_feedback(task_name):
             writer.writerow(feedback_data)
 
         st.success(f"Thank you for your feedback! NASA TLX Score: {nasa_tlx:.2f}")
+
+        # Reset sliders after submission
+        reset_sliders()
+ 
+    

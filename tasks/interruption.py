@@ -4,9 +4,7 @@ import time
 import os
 import datetime
 import random
-import threading
 from typing import List
-from PIL import Image
 from streamlit_autorefresh import st_autorefresh
 
 from tasks.time_constraint import save_results

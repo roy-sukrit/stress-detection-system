@@ -5,4 +5,4 @@ pynput
 streamlit_autorefresh
 python-dotenv
 dlib  
-                               
+streamlit-scroll-to-top      

@@ -2,8 +2,9 @@ import streamlit as st
 import os
 import datetime
 from dotenv import load_dotenv
-from tracking.tracking import start_tracking, stop_tracking, collect_feedback
+from tracking.tracking import start_tracking, stop_tracking,collect_feedback
 import threading
+import csv
 
 def run_tracking_in_thread(task_name):
     tracking_thread = threading.Thread(target=start_tracking, args=(task_name,), daemon=True)
@@ -67,7 +68,7 @@ def run_image_based_task(task_name, task_description, image_paths, correct_answe
                     st.error(f"❌ Incorrect. The correct answer was: `{correct_answer}`.")
 
                 # Save the result
-                save_results(task_name, user_input, correct_answer)
+                # save_results(task_name, user_input, correct_answer)
 
    
 def spot_the_differences_task():
@@ -103,7 +104,7 @@ def spot_the_mistake_wrapper():
     st.write("Complete the following visual tasks.")
    # Start Task Button
     if st.button("Start"):
-        run_tracking_in_thread("Rest Task")  # Run in a background thread
+        run_tracking_in_thread("Task 6: Rest Task")  # Run in a background thread
 
     # Run both tasks
     spot_the_differences_task()
@@ -111,8 +112,123 @@ def spot_the_mistake_wrapper():
     
      # Task Finished Button
     if st.button("Task Finished"):
-        stop_tracking("Rest Task")
+        stop_tracking("Task 6: Rest Task")
 
     # Collect feedback
     st.markdown("<hr>", unsafe_allow_html=True)  
-    collect_feedback(task_name="Rest Tasks")
+    collect_feedback(task_name="Rest Task")
+    
+    
+    
+    
+def collect_feedback_1(task_name, participantId= 'Test'):
+    st.subheader("Workload & Stress Feedback")
+    
+    # Initialize session state for form fields
+    if 'feedback_submitted' not in st.session_state:
+        st.session_state.feedback_submitted = False
+
+    # TLX Factors (1-5 scale, user-friendly labels)
+    st.write("Rate the following aspects of your experience (1 = Very Low, 5 = Very High):")
+    
+    # Assign session_state keys for each slider and text area
+    mental_demand = st.slider("How mentally exhausting was the task?", 1, 5, 3, key='mental_demand')
+    physical_demand = st.slider("How physically tiring was the task?", 1, 5, 3, key='physical_demand')
+    temporal_demand = st.slider("How rushed did you feel?", 1, 5, 3, key='temporal_demand')
+    performance = st.slider("How well do you think you performed? (Higher is better)", 1, 5, 3, key='performance')
+    effort = st.slider("How hard did you have to work?", 1, 5, 3, key='effort')
+    frustration = st.slider("How frustrated did you feel?", 1, 5, 3, key='frustration')
+
+    # NASA TLX Score Calculation (now based on 1-5 scale)
+    nasa_tlx = (mental_demand + physical_demand + temporal_demand + 
+                (5 - performance) + effort + frustration) / 6
+
+    # Unique follow-up questions based on the task
+    if task_name == "Rest Tasks":
+        most_stressful_part = st.text_area("What part of this task was the hardest?", key='most_stressful_part')
+        concentration_level = st.slider("How focused did you feel?", 1, 5, 3, key='concentration_level')
+
+    elif task_name == "TimeConstraint":
+        time_pressure = st.slider("How much did the time constraint affect your performance?", 1, 5, 3, key='time_pressure')
+        if time_pressure >= 4:
+            st.write("It seems the timer added pressure. Any suggestions to make it fairer?")
+            time_feedback = st.text_area("Your thoughts on the time limit:", key='time_feedback')
+    
+    elif task_name == "Interruptions Task":
+        interruptions_impact = st.slider("How much did the interruptions affect you?", 1, 5, 3, key='interruptions_impact')
+        if interruptions_impact >= 4:
+            st.write("It looks like interruptions were a major issue. Can you describe what made it difficult?")
+            interruption_feedback = st.text_area("Your experience with interruptions:", key='interruption_feedback')
+
+    elif task_name == "Combination Task":
+        multitasking_difficulty = st.slider("How difficult was it to manage both the timer and interruptions?", 1, 5, 3, key='multitasking_difficulty')
+        focus_loss = st.slider("How often did you lose focus due to interruptions?", 1, 5, 3, key='focus_loss')
+
+    # General stress-related questions
+    stress_reasons = ", ".join(st.multiselect(
+        "What contributed to your stress?",
+        ["Lack of Experience", "Time Pressure", "Interruptions", "Unclear Instructions", "Too Many Tasks at Once", 
+         "Noise/Distractions", "Lack of Breaks", "Fatigue", "Personal Life Stress"],
+        key='stress_reasons'
+    ))
+
+    # Deadline experience & additional feedback
+    additional_feedback = st.text_area("Any other feedback or suggestions?", key='additional_feedback')
+
+    # Timestamp
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Submit feedback button
+    if st.button("Submit Feedback"):
+        file_path = f"data/Feedback/{task_name}/feedback_data_{participantId}.csv"
+
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+        # Check if file exists (to add headers if needed)
+        file_exists = os.path.isfile(file_path)
+
+        # Open CSV file and append data
+        with open(file_path, mode="a", newline="") as file:
+            writer = csv.writer(file)
+
+            # Write headers if the file is new
+            if not file_exists:
+                writer.writerow(["Participant Id", "Timestamp",
+                                 "Mental Demand", "Physical Demand", "Temporal Demand", 
+                                 "Performance", "Effort", "Frustration", "NASA TLX Score",
+                                 "Stress Reasons", "Additional Feedback"])
+
+            # Store common data
+            feedback_data = [participantId, timestamp, 
+                             mental_demand, physical_demand, temporal_demand, 
+                             performance, effort, frustration, round(nasa_tlx, 2), 
+                             stress_reasons, additional_feedback]
+
+            # Add task-specific data
+            if task_name == "Rest Tasks":
+                feedback_data.append(most_stressful_part)
+                feedback_data.append(concentration_level)
+
+            elif task_name == "TimeConstraint":
+                feedback_data.append(time_pressure)
+                if time_pressure >= 4:
+                    feedback_data.append(time_feedback)
+
+            elif task_name == "Interruptions Task":
+                feedback_data.append(interruptions_impact)
+                if interruptions_impact >= 4:
+                    feedback_data.append(interruption_feedback)
+
+            elif task_name == "Combination Task":
+                feedback_data.append(multitasking_difficulty)
+                feedback_data.append(focus_loss)
+
+            # Write the feedback data row
+            writer.writerow(feedback_data)
+
+        st.success(f"Thank you for your feedback! NASA TLX Score: {nasa_tlx:.2f}")
+        
+        # Reset the form by clearing the session state
+        
+    
