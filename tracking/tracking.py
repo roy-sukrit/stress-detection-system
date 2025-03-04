@@ -28,7 +28,7 @@ task_enum = {"Task 1: Word Unscramble Task":"T",
              "Task 6: Rest Task":"R"}
 
 def getTaskValue(val):
-    print(task_enum[val])
+    # print(task_enum[val])
     return task_enum[val]
 def generate_participant_id():
     """
@@ -120,6 +120,7 @@ def log_to_file(filename,name, task_name,message):
         os.makedirs(directory, exist_ok=True)
     with open(filename, "a") as f:
         f.write(f"{participantId},{task_name},{time.strftime('%Y-%m-%d %H:%M:%S')} - {name} , {message}\n")
+    print("Split ==>",message.split(":")[1] if ":" in message else "NO")    
     log_to_csv(filename, [participantId,getTaskValue(task_name),time.strftime('%Y-%m-%d %H:%M:%S'),name, message.split(":")[1] if ":" in message else ""])        
         
 
@@ -139,7 +140,8 @@ def end_session(filename,task_name):
 def mouse_tracking(filename,task_name):
     def on_move(x, y):
         if session_active.is_set():
-            log_to_file(filename, "Mouse",f"Mouse Move - ({x}, {y})")
+            print("on_move",x,y)
+            log_to_file(filename, "Mouse",task_name,f"Mouse Move :({x}, {y})")
 
     def on_click(x, y, button, pressed):
         if session_active.is_set():
@@ -147,21 +149,21 @@ def mouse_tracking(filename,task_name):
 
     def on_scroll(x, y, dx, dy):
         if session_active.is_set():
-            log_to_file(filename,"Mouse", f"Mouse Scroll -({x}, {y}) : Delta ({dx}, {dy})")
+            log_to_file(filename,"Mouse",task_name, f"Mouse Scroll -({x}, {y}) : Delta ({dx}, {dy})")
 
     global mouse_listener
     mouse_listener = mouse.Listener(on_move=on_move, on_click=on_click, on_scroll=on_scroll)
     mouse_listener.start()
     mouse_listener.join()
 
-def keyboard_tracking(filename):
+def keyboard_tracking(filename,task_name):
     def on_press(key):
         if session_active.is_set():
-            log_to_file(filename,"Keyboard", f"Key Press: {key}")
+            log_to_file(filename,"Keyboard",task_name, f"Key Press: {key}")
 
     def on_release(key):
         if session_active.is_set():
-            log_to_file(filename,"Keyboard",  f"Key Release: {key}")
+            log_to_file(filename,"Keyboard", task_name, f"Key Release: {key}")
         if key == keyboard.Key.esc:  # Stop listener on Esc key
             return False
 
@@ -366,7 +368,7 @@ def gaze_tracking(filename,task_name):
             time.sleep(0.5)  # Prevent high CPU usage
 
     except Exception as e:
-        log_to_file(filename, "Error", f"Error during gaze tracking: {str(e)}")
+        log_to_file(filename, "Error", task_name,f"Error during gaze tracking: {str(e)}")
         print(f"Error during gaze tracking: {str(e)}")
 
     finally:
