@@ -8,6 +8,8 @@ shape_predictor_68_face_landmarks.dat
 lbfmodel.yaml
 temp_code_*
 data/*
+data_Test_1/*
+distractors/*
 music/*
 images/*
 gifs/*

@@ -40,7 +40,7 @@ def interruption_task(VIDEO_INTERRUPTIONS,INTERRUPTIONS_TIMER):
     if "last_interrupt_time" not in st.session_state:
         st.session_state.last_interrupt_time = time.time()
     if "interrupt_interval" not in st.session_state:
-        st.session_state.interrupt_interval = random.randint(0,int(INTERRUPTIONS_TIMER))  # Random interval (5-10 sec)
+        st.session_state.interrupt_interval = random.randint(0,10)  # Random interval (5-10 sec)
     if "interrupt" not in st.session_state:
         st.session_state.interrupt = False
     if "answers" not in st.session_state:
@@ -67,16 +67,19 @@ def interruption_task(VIDEO_INTERRUPTIONS,INTERRUPTIONS_TIMER):
     # Step 2: Define questions
     questions = [
         "What was the main topic of the video?",
-        "What key point did the speaker make about real-world applications?",
-        "Summarize the conclusion in one sentence.",
+        "What are some scientifically proven ways to improve memory and focus, as mentioned in the talk?",
+        "Why is physical activity considered beneficial for brain health, and how does it help in counteracting the effects of stress?",
     ]
     
     interruption_files = [
-        "music/crowd-clapping.mp3",
-        "music/crowd-murmuring.mp3",
-        "music/crowd-noise.mp3",
-    ]
-
+    os.getcwd() + "/music/1.mp3",
+    os.getcwd() + "/music/3.mp3",
+    os.getcwd() + "/music/4.mp3",
+    os.getcwd() + "/music/5.mp3",
+    os.getcwd() + "/music/6.mp3",
+    os.getcwd() + "/music/7.mp3",
+    os.getcwd() + "/music/8.mp3"
+     ]
 
     # Step 3: Start Task Button
     if not st.session_state.task_started:
@@ -106,7 +109,7 @@ def interruption_task(VIDEO_INTERRUPTIONS,INTERRUPTIONS_TIMER):
         if current_time - st.session_state.last_interrupt_time >= st.session_state.interrupt_interval:
             st.session_state.interrupt = True
             st.session_state.last_interrupt_time = current_time
-            st.session_state.interrupt_interval = random.randint(8, 12)  # Set new random interval
+            st.session_state.interrupt_interval = random.randint(20, 120)  # Set new random interval
 
         # Play interruption audio if triggered
         if st.session_state.interrupt:
@@ -133,7 +136,10 @@ def interruption_task(VIDEO_INTERRUPTIONS,INTERRUPTIONS_TIMER):
 def run_all_tasks(VIDEO_INTERRUPTIONS):
     load_dotenv()
 
-    INTERRUPTIONS_TIMER = os.getenv("INTERRUPTIONS_TIMER")
+    # INTERRUPTIONS_TIMER = os.getenv("INTERRUPTIONS_TIMER")
+    INTERRUPTIONS_TIMER = 720
+
+    # print("INTERRUPTIONS_TIMER==>",INTERRUPTIONS_TIMER)
     interruption_task(VIDEO_INTERRUPTIONS,INTERRUPTIONS_TIMER)
      
     st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)  # Adding extra space

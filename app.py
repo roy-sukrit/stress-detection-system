@@ -1,6 +1,6 @@
 import random
 import streamlit as st
-from tasks.time_constraint import gifPaths, time_constraint_task
+from tasks.time_constraint import gifPaths,distractorGifPaths, time_constraint_task
 from tasks.interruption import run_all_tasks
 from tasks.combination import run_combination_tasks
 from tasks.rest import spot_the_mistake_wrapper
@@ -54,6 +54,7 @@ else:
         scroll_to_here(0, key='top')
     # Run the selected task
     if st.session_state["task_type"] == "Time Constraint":
+        st.sidebar.image(random.choice(distractorGifPaths()), caption="Keep Going! 😂")
         time_constraint_task()
     elif st.session_state["task_type"] == "Interruption":
         run_all_tasks(VIDEO_INTERRUPTIONS)

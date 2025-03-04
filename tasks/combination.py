@@ -17,7 +17,7 @@ def combination_task(VIDEO_COMBINATION,COMBINATION_TIMER):
     if "last_interrupt_time" not in st.session_state:
         st.session_state.last_interrupt_time = time.time()
     if "interrupt_interval" not in st.session_state:
-        st.session_state.interrupt_interval = random.randint(0,int(COMBINATION_TIMER))  # Random interval (5-10 sec)
+        st.session_state.interrupt_interval = random.randint(5,10)  # Random interval (5-10 sec)
     if "interrupt" not in st.session_state:
         st.session_state.interrupt = False
     if "audio_file" not in st.session_state:
@@ -28,7 +28,7 @@ def combination_task(VIDEO_COMBINATION,COMBINATION_TIMER):
         st.session_state.email_draft = ""  # Initialize only if not set
 
     # Auto-refresh every second to update the timer
-    st_autorefresh(interval=1000, key="auto_refresh")
+    st_autorefresh(interval=2000, key="auto_refresh")
 
     # App Title
     st.title("Timed Email Writing Task with Interruptions")
@@ -49,22 +49,28 @@ def combination_task(VIDEO_COMBINATION,COMBINATION_TIMER):
 
     # Step 2: Define multiple audio interruptions
     interruption_files = [
-        "music/crowd-clapping.mp3",
-        "music/crowd-murmuring.mp3",
-        "music/crowd-noise.mp3",    ]
+    os.getcwd() + "/music/1.mp3",
+    os.getcwd() + "/music/3.mp3",
+    os.getcwd() + "/music/4.mp3",
+    os.getcwd() + "/music/5.mp3",
+    os.getcwd() + "/music/6.mp3",
+    os.getcwd() + "/music/7.mp3",
+    os.getcwd() + "/music/8.mp3"
+     ]
+
 
     # Step 3: Start Task Button
     if not st.session_state.task_started:
 
-        if st.button("Start Task"):
+        if st.button("Start Writing"):
             st.session_state.task_started = True
             st.session_state.last_interrupt_time = time.time()
             st.session_state.interrupt = False
             st.session_state.audio_file = None
-            st.session_state.time_remaining = 180  # Reset timer to 3 minutes
+            st.session_state.time_remaining = 60  # Reset timer to 3 minutes
             st.session_state.email_draft = ""  # Reset email draft
             start_tracking("Task 5: Combination Task")
-
+ 
 
     # Step 4: Timer Logic
     if st.session_state.task_started:
@@ -74,7 +80,7 @@ def combination_task(VIDEO_COMBINATION,COMBINATION_TIMER):
             st.warning("⏳ **Time's up! Please submit your email.**")
 
         # Display the countdown timer
-        st.write(f"⏰ **Time Remaining:** {st.session_state.time_remaining} seconds")
+        st.write(f"⏰ **Time Remaining :** {st.session_state.time_remaining} seconds")
 
     # Step 5: Email Writing Input Box (Improved UI with Subject and To)
     st.write("**To:** stephen.johnson@gmail.com")  # Static email recipient
@@ -103,7 +109,7 @@ def combination_task(VIDEO_COMBINATION,COMBINATION_TIMER):
         if current_time - st.session_state.last_interrupt_time >= st.session_state.interrupt_interval:
             st.session_state.interrupt = True
             st.session_state.last_interrupt_time = current_time
-            st.session_state.interrupt_interval = random.randint(8, 12)  # Set new random interval
+            st.session_state.interrupt_interval = random.randint(1, 5)  # Set new random interval
             st.session_state.audio_file = random.choice(interruption_files)  # Select a random audio file
 
         # Play interruption audio if triggered
@@ -129,7 +135,9 @@ def combination_task(VIDEO_COMBINATION,COMBINATION_TIMER):
 def run_combination_tasks(VIDEO_COMBINATION):
     load_dotenv()
 
-    COMBINATION_TIMER = os.getenv("COMBINATION_TIMER")
+    # COMBINATION_TIMER = os.getenv("COMBINATION_TIMER")
+    
+    COMBINATION_TIMER =720
 
     combination_task(VIDEO_COMBINATION,COMBINATION_TIMER)
 
