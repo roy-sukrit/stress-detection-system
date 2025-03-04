@@ -88,11 +88,11 @@ def word_rephrase_task(TIME_CONSTRAINT_TIMER):
     task_description = "Unscramble the following words to form correct words:"
     
     word_pairs = {
-        "stsercs": "stress",
+        "stsers": "stress",
         "gnirotinom": "monitoring",
         "erhavoib": "behavior",
         "gilatid": "digital",
-        "siyalnana": "analysis"
+        "siyslana": "analysis"
     }
 
     st.subheader(task_name)
@@ -136,7 +136,7 @@ def word_rephrase_task(TIME_CONSTRAINT_TIMER):
 def report_writing_task(TIME_CONSTRAINT_TIMER):
     task_name = "Task 3: Report Writing Task"
     task_description = """
-    Write a short report on the Mexican War of 1846. Be concise and focus on the main events .
+    Write a short report on Irish War of Independence. Be concise and highlight the timeline.
     """
     
     st.subheader(f"{task_name}")
@@ -164,7 +164,7 @@ def sentence_rephrase_task(TIME_CONSTRAINT_TIMER):
         "Digital behavior analysis helps in understanding user stress patterns.",
         "AI models can predict stress levels based on user interactions.",
         "Identifying stress early can lead to better mental well-being.",
-        "This results in cognitive overload and stress."
+        "This results in prevention of cognitive overload and stress."
     ]
 
     # Initialize session state for user order if it's the first time
@@ -181,15 +181,17 @@ def sentence_rephrase_task(TIME_CONSTRAINT_TIMER):
     # Display sentences with selectable options for reordering
     st.write("### Arrange the sentences in the correct order:")
     new_order = []
-    for i, sentence in enumerate(st.session_state["user_order"]):
+    available_sentences = st.session_state["user_order"].copy()  # Copy of sentences to avoid modifying the original list
+
+    for i in range(len(st.session_state["user_order"])):
         # Use a selectbox to allow the user to reorder sentences
-        new_position = st.selectbox(
+        selected_sentence = st.selectbox(
             f"Sentence {i + 1}",
-            options=st.session_state["user_order"],
-            index=st.session_state["user_order"].index(sentence),
+            options=available_sentences,
             key=f"sentence_{i}"
         )
-        new_order.append(new_position)
+        new_order.append(selected_sentence)
+        available_sentences.remove(selected_sentence)  # Remove the selected sentence from available options
 
     # Update the session state with the new order
     if new_order != st.session_state["user_order"]:
@@ -208,8 +210,7 @@ def sentence_rephrase_task(TIME_CONSTRAINT_TIMER):
         st.write(f"### Final Score: {correct_count} / {len(correct_order)}")
 
     # Trigger the timer and handle task completion logic
-    run_task_with_timer(task_name, task_description, logic,TIME_CONSTRAINT_TIMER)
-
+    run_task_with_timer(task_name, task_description, logic, TIME_CONSTRAINT_TIMER)
 
 
 def gifPaths():
@@ -234,7 +235,36 @@ def gifPaths():
     image_paths = [os.path.join(gifs_dir, file) for file in image_files]
     
     # Debugging: Print the list of valid image paths
-    print("Valid image files:", image_paths)
+    # print("Valid image files:", image_paths)
+    
+    return image_paths
+
+
+
+
+def distractorGifPaths():
+    # Get the current working directory
+    filePath = os.getcwd()
+    
+    # Define the path to the 'gifs' directory
+    gifs_dir = os.path.join(filePath, 'distractors')
+    
+    # Check if the 'gifs' directory exists
+    if not os.path.exists(gifs_dir):
+        raise FileNotFoundError(f"The directory '{gifs_dir}' does not exist.")
+    
+    # Get a list of files in the 'gifs' directory
+    files = os.listdir(gifs_dir)
+    
+    # Filter out non-image files (e.g., only allow .gif, .png, .jpg, etc.)
+    valid_extensions = ['.gif', '.png', '.jpg', '.jpeg']
+    image_files = [file for file in files if os.path.splitext(file)[1].lower() in valid_extensions]
+    
+    # Construct full paths for the image files
+    image_paths = [os.path.join(gifs_dir, file) for file in image_files]
+    
+    # Debugging: Print the list of valid image paths
+    # print("Valid image files:", image_paths)
     
     return image_paths
 
@@ -248,9 +278,9 @@ def time_constraint_task():
     Your performance and stress levels will be recorded.
     """)
 
-    word_rephrase_task(int(TIME_CONSTRAINT_TIMER))
-    sentence_rephrase_task(int(TIME_CONSTRAINT_TIMER))
-    report_writing_task(int(TIME_CONSTRAINT_TIMER))
+    word_rephrase_task(10)
+    sentence_rephrase_task(10)
+    report_writing_task(10)
     
     st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)  # Adding extra space
     st.markdown("<hr>", unsafe_allow_html=True)  # Horizontal lin
